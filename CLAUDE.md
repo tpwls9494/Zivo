@@ -141,4 +141,3 @@ npm test                    # vitest
 
 - **시작**: `plan.md` 읽기 → 현재 Day 확인 → 해당 Day 체크리스트로 작업
 - **종료**: 완료 항목 `[x]` 체크, 상단 진척 개요 표 업데이트, `Next:` 블록에 이어갈 지점 기록
-- **커밋·푸시**: 각 Day 작업 완료 후 반드시 `git add → git commit → git push` 수행. 커밋 메시지는 `feat: Day N — <주제>` 형식, Co-Authored-By 포함.

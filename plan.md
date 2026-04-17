@@ -6,7 +6,7 @@
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 
 **현재 단계**: Phase 2 (웹앱 피벗, Day 8-14)
-**마지막 업데이트**: 2026-04-17 (Phase 2 Day 8 완료 — pnpm workspace + webapp 스캐폴딩)
+**마지막 업데이트**: 2026-04-17 (Phase 2 Day 9 완료 — 검색 폼 + 결과 3탭 포팅)
 
 ---
 
@@ -30,8 +30,8 @@
 | Day | 주제 | 상태 |
 |---|---|---|
 | Day 8 | pnpm workspace + webapp 스캐폴딩 | ✅ 완료 |
-| Day 9 | 검색 폼 + 결과 3탭 포팅 | ⏳ 다음 |
-| Day 10 | 예약 플로우 (/book, /book/confirm) | ⏸ 대기 |
+| Day 9 | 검색 폼 + 결과 3탭 포팅 | ✅ 완료 |
+| Day 10 | 예약 플로우 (/book, /book/confirm) | ⏳ 다음 |
 | Day 11 | 프로필 + 예약 이력 페이지 | ⏸ 대기 |
 | Day 12 | 익스텐션 축소 (UI 삭제, 팝업 재디자인) | ⏸ 대기 |
 | Day 13 | Content script 자동완성 (KE/JL 우선) | ⏸ 대기 |
@@ -279,19 +279,26 @@
 - webapp `src/providers/QueryProvider.tsx` 클라이언트 컴포넌트, staleTime 5분 (Redis TTL과 일치)
 - webapp page.tsx — Zivo 홈 placeholder (검색/프로필 링크)
 
-## Day 9 — 검색 폼 + 결과 3탭 ⏸
+## Day 9 — 검색 폼 + 결과 3탭 ✅
 
-- [ ] `app/page.tsx` — SearchForm (출발/도착/가는날/오는날/인원/좌석)
-- [ ] `app/search/page.tsx` — URL query parse (`origin`, `destination`, `depart`, `return`, `pax`) → TanStack Query 로 `/api/flights/search` 호출
-- [ ] 탭 3개: 기본 / 더 싼 옵션 / 달력(placeholder)
-- [ ] `src/components/FlightCard.tsx`, `ComboCard.tsx` — 익스텐션 `OfferCard`/`ComboCard` 로직 포팅
-- [ ] 편도 조합 경고 배너 (`두 편 별개 예약, 앞 편 지연 시 자동 보호 없음`)
-- [ ] 로딩/빈 결과/에러 상태 UI
+- [x] `app/page.tsx` — SearchForm (출발/도착/가는날/오는날/인원/좌석)
+- [x] `app/search/page.tsx` — URL query parse (`origin`, `destination`, `depart`, `return`, `pax`) → TanStack Query 로 `/api/flights/search` 호출
+- [x] 탭 3개: 기본 / 더 싼 옵션 / 달력(placeholder)
+- [x] `src/components/FlightCard.tsx`, `ComboCard.tsx` — 익스텐션 `OfferCard`/`ComboCard` 로직 포팅
+- [x] 편도 조합 경고 배너 (`두 편 별개 예약, 앞 편 지연 시 자동 보호 없음`)
+- [x] 로딩/빈 결과/에러 상태 UI
 
 ### Day 9 완료 기준
-- [ ] ICN→KIX 2026-05-10 검색 시 3탭 렌더
-- [ ] 더 싼 옵션 탭에서 `savings_krw` ≥ 0 인 ComboCard 만 노출
-- [ ] URL 공유 시 같은 결과 복원 (뒤로가기 동작)
+- [ ] ICN→KIX 2026-05-10 검색 시 3탭 렌더 (수동 확인)
+- [x] 더 싼 옵션 탭에서 `savings_krw` ≥ 0 인 ComboCard 만 노출 (코드 필터링 구현)
+- [x] URL 공유 시 같은 결과 복원 (URL query string 기반 — useSearchParams)
+
+### Day 9 Notes
+- SearchForm: 8개 공항 드롭다운, 오는날 선택 옵션, 인원·좌석 선택
+- 검색 결과 URL: `/search?origin=ICN&destination=KIX&depart=...&return=...&pax=1&cabin=economy`
+- ComboCard: savings_pct ≥ 20% 시 green 배너 + 버튼, 미만은 blue
+- FlightCard: 직항/경유 표시, 소요시간, 수하물 kg
+- Suspense 래퍼로 useSearchParams SSR 에러 방지
 
 ## Day 10 — 예약 플로우 ⏸
 
@@ -406,13 +413,11 @@
 
 ## Next
 
-> **Phase 2 Day 9 — 검색 폼 + 결과 3탭 포팅.**
+> **Phase 2 Day 10 — 예약 플로우 착수.**
 >
 > 착수 지점:
-> 1. `webapp/src/app/page.tsx` — SearchForm (출발/도착/가는날/오는날/인원/좌석)
-> 2. `webapp/src/app/search/page.tsx` — URL query parse → TanStack Query `/api/flights/search`
-> 3. `src/components/FlightCard.tsx`, `ComboCard.tsx` — 익스텐션 로직 포팅
-> 4. 편도 조합 경고 배너 (두 편 별개 예약, 지연 시 자동 보호 없음)
-> 5. 로딩/빈 결과/에러 상태 UI
->
-> 수동 smoke test 먼저 진행 (backend + webapp 동시 기동, `/api/health` 200 확인)
+> 1. `webapp/src/app/book/page.tsx` — `offer_id` query로 오퍼 재조회, PassengerForm (프로필 prefill)
+> 2. `webapp/src/app/book/confirm/page.tsx` — 예약 결과 + 딥링크 안내
+> 3. `POST /api/flights/book` 호출 → `deep_link_url` 새 탭 오픈
+> 4. 편도 조합: `combo_group_id`로 묶어 두 단계 예약
+> 5. 가격 변동 409 `PRICE_CHANGED` 수신 시 재확인 다이얼로그

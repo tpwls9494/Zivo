@@ -221,7 +221,7 @@ Zivo는 결제 정보를 직접 저장하거나 처리하지 않습니다.
 
 **결과물**: `zivo-v0.1.0.zip` — 익스텐션 단독으로 검색·예약 가능한 MVP. Phase 2 에서 웹앱 중심으로 전환하면서 익스텐션 UI 는 Day 12 에 축소 예정.
 
-### Phase 2 — 웹앱 피벗 (2주차)
+### Phase 2 — 웹앱 피벗 (2주차) ✅ 완료
 
 검색·결과·예약·이력을 Next.js 웹앱으로 이전하고, 익스텐션은 탑승자 정보 관리 + 항공사 사이트 자동완성(content script)으로 축소.
 
@@ -232,10 +232,11 @@ Zivo는 결제 정보를 직접 저장하거나 처리하지 않습니다.
 | Day 10 | 예약 플로우(`/book`, `/book/confirm`) + 편도 조합 가는편/오는편 |
 | Day 11 | 프로필(`/profile`) + 예약 이력(`/bookings`) |
 | Day 12 | 익스텐션 축소 — 검색/결과/예약/이력 UI 삭제, 팝업 재디자인 |
-| Day 13 | Content script 자동완성 (대한항공/JAL 우선, selector map + MutationObserver) |
-| Day 14 | E2E + Vercel/Railway 배포, v0.2.0 태그 |
+| Day 13 | Content script 자동완성 (대한항공/JAL, selector map + MutationObserver) |
+| Day 14 | Vercel/Railway 배포 설정, v0.2.0 태그 |
 
-**Phase 2.5**: 카카오 OAuth (webapp 콜백 + backend JWT 쿠키) — Day 14 이후 분리 작업
+**결과물**: `zivo-v0.2.0.zip` — 웹앱 중심 구조, 익스텐션은 프로필 관리 + 자동완성 전담.  
+**Phase 2.5**: 카카오 OAuth (webapp 콜백 + backend JWT 쿠키) — 다음 작업 블록
 
 ### Phase 3 — 커버리지·고도화 (3~4주차)
 - Kiwi Tequila 병렬 소스 추가 (파트너 승인 후)
@@ -270,7 +271,7 @@ Zivo는 결제 정보를 직접 저장하거나 처리하지 않습니다.
 | Next.js 웹앱 | 3000 | `pnpm -F zivo-webapp dev` |
 | 크롬 익스텐션 | — (파일 빌드) | `pnpm -F zivo-extension dev` |
 
-### 한 번에 실행 (Phase 2 이후)
+### 한 번에 실행
 
 ```bash
 git clone https://github.com/your-username/zivo.git
@@ -278,9 +279,10 @@ cd zivo
 pnpm install
 docker-compose up -d
 # 터미널 A
-cd backend && cp .env.example .env && alembic upgrade head && uvicorn app.main:app --reload
+cd backend && cp .env.example .env  # .env 편집 후:
+alembic upgrade head && uvicorn app.main:app --reload
 # 터미널 B
-pnpm dev:all       # webapp + extension 동시 실행
+pnpm dev:all       # webapp(3000) + extension watch 동시 실행
 ```
 
 ### 백엔드 실행
@@ -297,20 +299,25 @@ uvicorn app.main:app --reload
 ### 웹앱 (Next.js)
 
 ```bash
-cd zivo/webapp
-cp .env.local.example .env.local   # NEXT_PUBLIC_API_BASE=http://localhost:8000
-pnpm install
-pnpm dev                           # http://localhost:3000
-pnpm build                         # 프로덕션 빌드
+# 루트에서 실행
+pnpm dev:web                       # http://localhost:3000
+
+# 또는 webapp 디렉터리에서 직접
+cd webapp
+pnpm dev
 ```
+
+> 프로덕션 배포 시 `NEXT_PUBLIC_API_BASE=https://api.zivo.app` 환경변수 설정 필요 (`.env.production.example` 참고)
 
 ### 크롬 익스텐션 빌드
 
 ```bash
-cd zivo/extension
-pnpm install
-pnpm dev                           # watch 빌드
-pnpm build                         # 프로덕션 빌드 → dist/
+# 루트에서 실행
+pnpm dev:ext                       # watch 빌드
+
+# 또는 extension 디렉터리에서 직접
+cd extension
+npm run build                      # 프로덕션 빌드 → dist/
 ```
 
 **크롬에 익스텐션 로드**
@@ -407,7 +414,7 @@ price_alerts     가격 알림 설정
 
 ## 향후 확장 계획
 
-- **항공사 사이트 자동완성 확대** (Phase 2 Day 13 착수): 대한항공/JAL 을 시작으로 ANA/제주항공/피치/제트스타 순차 추가
+- **항공사 사이트 자동완성 확대** (대한항공/JAL 완료): ANA/제주항공/피치/제트스타 순차 추가 예정
 - **도메인 확장**: 한일 노선 안정화 이후 대만(TPE), 중국(PEK/PVG) 노선 추가
 - **다국어 지원**: 일본어, 중국어, 영어 UI
 - **모바일 앱 (Phase 4)**: React Native 기반 iOS/Android. 웹앱 코드와 공유하는 도메인 모델은 이미 `packages/types/` 에 분리되어 있어 전환 비용이 낮음

@@ -1,10 +1,16 @@
 import asyncio
+import uuid
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, Depends, Header, HTTPException
+from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.db.session import get_db
+from app.models.booking import Booking
+from app.schemas.booking import BookRequest, BookResponse, BookingDetail
 from app.schemas.flight import SearchRequest, SearchResponse
 from app.services import cache, duffel
 from app.services.combo import build_combos
+from app.services.user import get_or_create_user
 
 router = APIRouter()
 
@@ -14,6 +20,23 @@ _ALLOWED_PAIRS = frozenset(
     {(kr, jp) for kr in _SUPPORTED_KR for jp in _SUPPORTED_JP}
     | {(jp, kr) for jp in _SUPPORTED_JP for kr in _SUPPORTED_KR}
 )
+
+_CARRIER_BOOKING_URLS: dict[str, str] = {
+    "KE": "https://www.koreanair.com/booking/select-flights",
+    "OZ": "https://flyasiana.com/C/KR/KO/booking/flightList",
+    "7C": "https://www.jejuair.net/jejuair/KR/KO/booking/ticket/reservation.do",
+    "BX": "https://www.airbusan.com/f/booking/flight-search",
+    "LJ": "https://www.jinair.com/booking/flight/domestic",
+    "TW": "https://www.twayair.com/app/booking",
+    "NH": "https://www.ana.co.jp/en/kr/",
+    "JL": "https://www.jal.co.jp/kr/ko/",
+    "MM": "https://www.flypeach.com/kr/ko",
+    "3K": "https://www.jetstar.com/kr/ko",
+}
+
+
+def _deep_link(carrier_iata: str) -> str:
+    return _CARRIER_BOOKING_URLS.get(carrier_iata, "https://www.google.com/flights")
 
 
 @router.post("/search", response_model=SearchResponse)
@@ -60,7 +83,69 @@ async def search_flexible() -> dict:
     return {"top": []}
 
 
-@router.post("/book")
-async def book() -> dict:
-    """Day 5 에서 구현."""
-    return {"redirect_url": ""}
+@router.post("/book", response_model=BookResponse)
+async def book_flight(
+    body: BookRequest,
+    x_device_id: str = Header(...),
+    db: AsyncSession = Depends(get_db),
+) -> BookResponse:
+    user = await get_or_create_user(db, x_device_id)
+
+    is_combo = body.combo_inbound is not None
+    combo_group_id = body.combo_group_id or (uuid.uuid4() if is_combo else None)
+    direction = "outbound" if is_combo else body.direction
+
+    outbound_id = uuid.uuid4()
+    outbound_booking = Booking(
+        id=outbound_id,
+        user_id=user.id,
+        combo_group_id=combo_group_id,
+        direction=direction,
+        carrier_iata=body.offer.carrier_iata,
+        origin=body.offer.departure_iata,
+        destination=body.offer.arrival_iata,
+        departure_at=body.offer.departure_at,
+        arrival_at=body.offer.arrival_at,
+        total_krw=body.offer.total_krw,
+        offer_snapshot=body.offer.model_dump(mode="json"),
+        status="redirected",
+    )
+    db.add(outbound_booking)
+
+    result_bookings: list[BookingDetail] = [
+        BookingDetail(
+            booking_id=outbound_id,
+            direction=direction,
+            deep_link_url=_deep_link(body.offer.carrier_iata),
+            combo_group_id=combo_group_id,
+        )
+    ]
+
+    if is_combo and body.combo_inbound is not None:
+        inbound_id = uuid.uuid4()
+        inbound_booking = Booking(
+            id=inbound_id,
+            user_id=user.id,
+            combo_group_id=combo_group_id,
+            direction="inbound",
+            carrier_iata=body.combo_inbound.carrier_iata,
+            origin=body.combo_inbound.departure_iata,
+            destination=body.combo_inbound.arrival_iata,
+            departure_at=body.combo_inbound.departure_at,
+            arrival_at=body.combo_inbound.arrival_at,
+            total_krw=body.combo_inbound.total_krw,
+            offer_snapshot=body.combo_inbound.model_dump(mode="json"),
+            status="redirected",
+        )
+        db.add(inbound_booking)
+        result_bookings.append(
+            BookingDetail(
+                booking_id=inbound_id,
+                direction="inbound",
+                deep_link_url=_deep_link(body.combo_inbound.carrier_iata),
+                combo_group_id=combo_group_id,
+            )
+        )
+
+    await db.commit()
+    return BookResponse(bookings=result_bookings)

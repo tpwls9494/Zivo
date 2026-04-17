@@ -86,6 +86,42 @@ export interface SearchResponse {
   cached: boolean;
 }
 
+export interface BookRequest {
+  offer: NormalizedOffer;
+  direction?: string;
+  combo_inbound?: NormalizedOffer;
+  combo_group_id?: string;
+}
+
+export interface BookingDetail {
+  booking_id: string;
+  direction: string;
+  deep_link_url: string;
+  combo_group_id: string | null;
+}
+
+export interface BookResponse {
+  bookings: BookingDetail[];
+}
+
+export interface BookingItem {
+  id: string;
+  direction: string;
+  carrier_iata: string;
+  origin: string;
+  destination: string;
+  departure_at: string;
+  arrival_at: string;
+  total_krw: number;
+  status: string;
+  combo_group_id: string | null;
+  created_at: string | null;
+}
+
+export interface BookingsListResponse {
+  items: BookingItem[];
+}
+
 export const api = {
   health: () => request<{ status: string }>("/health"),
   searchFlights: (body: unknown) =>
@@ -96,4 +132,10 @@ export const api = {
       method: "PUT",
       body: JSON.stringify(body),
     }),
+  book: (body: BookRequest) =>
+    request<BookResponse>("/api/flights/book", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  listBookings: () => request<BookingsListResponse>("/api/bookings"),
 };

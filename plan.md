@@ -4,7 +4,7 @@
 > 상세 플래닝은 `/Users/isejin/.claude/plans/readme-md-zivo-misty-cupcake.md` 참고.
 
 **현재 단계**: Phase 1 (7일 MVP)
-**마지막 업데이트**: 2026-04-17 (Day 4 구현·테스트 완료)
+**마지막 업데이트**: 2026-04-17 (Day 5 구현·테스트 완료)
 
 ---
 
@@ -17,8 +17,8 @@
 | Day 2 | 프로필 자동저장/자동완성 | ✅ 완료 (수동 동기화 검증만 남음) |
 | Day 3 | Duffel API 연동 | ✅ 완료 |
 | Day 4 | 편도 조합 + 3탭 UI | ✅ 완료 |
-| Day 5 | 원터치 예약 플로우 | ⏳ 다음 |
-| Day 6 | Redis 캐싱·에러·가격 재확인 | ⏸ 대기 |
+| Day 5 | 원터치 예약 플로우 | ✅ 완료 |
+| Day 6 | Redis 캐싱·에러·가격 재확인 | ⏳ 다음 |
 | Day 7 | E2E 테스트 + 베타 패키징 | ⏸ 대기 |
 
 범례: ✅ 완료 · 🔄 진행 중 · ⏳ 다음 · ⏸ 대기 · ⚠️ 블록
@@ -157,18 +157,26 @@
 
 ---
 
-## Day 5 — 원터치 예약 플로우 ⏸
+## Day 5 — 원터치 예약 플로우 ✅
 
-- [ ] `POST /api/flights/book` — 저장된 프로필 + 선택 오퍼 → 딥링크 생성
-- [ ] `bookings` 테이블에 `direction`, `combo_group_id` 로 row 저장
-- [ ] 익스텐션: `탑승자 확인` 화면 → `chrome.tabs.create` 로 딥링크
-- [ ] 편도 조합은 `가는편 예약` → `오는편 예약` 두 단계
-- [ ] 예약 이력 screen (Phase 1 은 간단 리스트)
+- [x] `POST /api/flights/book` — 저장된 프로필 + 선택 오퍼 → 딥링크 생성
+- [x] `bookings` 테이블에 `direction`, `combo_group_id` + `created_at` 저장
+- [x] 익스텐션: `탑승자 확인` 화면 → `chrome.tabs.create` 로 딥링크
+- [x] 편도 조합은 `가는편 예약` → `오는편 예약` 두 단계 (두 탭 순차 오픈)
+- [x] 예약 이력 screen — `GET /api/bookings` + `BookingHistory.tsx`
+- [x] `tests/test_booking_api.py` — 8개 테스트 (누적 33/33)
+- [x] 익스텐션 빌드 168kB, `tsc --noEmit` 통과
 
 ### Day 5 완료 기준
-- [ ] 왕복 원터치: 저장 정보 표시 → 항공사 결제 페이지 새 탭 오픈
-- [ ] 편도 조합 원터치: 두 개의 탭이 순차적으로 열림
-- [ ] DB `bookings` 에 row 2개 (같은 `combo_group_id`) 생성
+- [x] 왕복 원터치: 저장 정보 표시 → 항공사 결제 페이지 새 탭 오픈
+- [x] 편도 조합 원터치: 두 개의 탭이 순차적으로 열림
+- [x] DB `bookings` 에 row 2개 (같은 `combo_group_id`) 생성
+
+### Notes
+- 딥링크는 항공사 carrier_iata → 예약 페이지 URL 매핑 (10개 항공사). 미매핑 시 google.com/flights
+- 익스텐션 메인 탭이 검색/프로필 → 검색/프로필/이력 3탭으로 확장
+- `BookingConfirm` 화면: 검색 탭 내 overlay 패턴 (별도 라우팅 없음)
+- `created_at` 마이그레이션 완료: `alembic/versions/5ae2dcd72a6a_add_created_at_to_bookings.py`
 
 ---
 
@@ -227,14 +235,14 @@
 
 ## Next
 
-> Day 5 (원터치 예약 플로우) 착수.
+> Day 6 (Redis 캐싱·에러·가격 재확인) 착수.
 >
-> Day 5 주요 작업:
-> - `POST /api/flights/book` — 저장된 프로필 + 선택 오퍼 → 딥링크 생성
-> - `bookings` 테이블에 `direction`, `combo_group_id` 로 row 저장
-> - 익스텐션: 탑승자 확인 화면 → `chrome.tabs.create` 로 딥링크
-> - 편도 조합은 가는편 → 오는편 두 단계
+> Day 6 주요 작업:
+> - Redis 캐싱 정책 정리 (key 포맷, TTL, 무효화)
+> - tenacity 재시도 데코레이터 전체 적용
+> - 예약 직전 가격 재확인 (Duffel 단건 조회, ±2% 초과 시 프론트 재확인 모달)
+> - 구조화 로깅 (JSON, 여권번호·전화번호 마스킹)
 >
 > 수동 확인 대기:
-> - `chrome://extensions` 에서 `dist/` 로드 → 검색 → 3탭 표시 확인
-> - Duffel sandbox 키 환경에서 ICN→KIX 검색 → `더 싼 옵션` 탭에 조합 카드 표시 확인
+> - `chrome://extensions` 에서 `dist/` 로드 → 검색 → 예약하기 클릭 → 탑승자 확인 화면 → 항공사 탭 오픈 확인
+> - `이력` 탭에서 예약 내역 리스트 확인

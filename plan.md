@@ -1,29 +1,49 @@
 # Zivo 진행 상황 (plan.md)
 
 > 세션 간 연속성 추적용. 각 세션 시작 시 이 파일과 `CLAUDE.md` 를 먼저 읽으면 된다.
-> 상세 플래닝은 `/Users/isejin/.claude/plans/readme-md-zivo-misty-cupcake.md` 참고.
+> 상세 플래닝:
+> - Phase 1 스캐폴딩: `/Users/isejin/.claude/plans/readme-md-zivo-misty-cupcake.md`
+> - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 
-**현재 단계**: Phase 1 (7일 MVP)
-**마지막 업데이트**: 2026-04-17 (Day 7 완료 — Phase 1 MVP 완성)
+**현재 단계**: Phase 2 (웹앱 피벗, Day 8-14)
+**마지막 업데이트**: 2026-04-17 (Phase 2 Day 8 완료 — pnpm workspace + webapp 스캐폴딩)
 
 ---
 
 ## 진척 개요
 
+### Phase 1 — 익스텐션 MVP (v0.1.0 완료)
+
 | Day | 주제 | 상태 |
 |---|---|---|
 | Day 0 | Claude 협업 기반 (CLAUDE.md + skills) | ✅ 완료 |
-| Day 1 | 모노레포 스캐폴딩 | ✅ 완료 (실행 검증 완료) |
-| Day 2 | 프로필 자동저장/자동완성 | ✅ 완료 (수동 동기화 검증만 남음) |
+| Day 1 | 모노레포 스캐폴딩 | ✅ 완료 |
+| Day 2 | 프로필 자동저장/자동완성 | ✅ 완료 |
 | Day 3 | Duffel API 연동 | ✅ 완료 |
 | Day 4 | 편도 조합 + 3탭 UI | ✅ 완료 |
 | Day 5 | 원터치 예약 플로우 | ✅ 완료 |
 | Day 6 | Redis 캐싱·에러·가격 재확인 | ✅ 완료 |
 | Day 7 | E2E 테스트 + 베타 패키징 | ✅ 완료 |
 
+### Phase 2 — 웹앱 피벗 (Day 8-14)
+
+| Day | 주제 | 상태 |
+|---|---|---|
+| Day 8 | pnpm workspace + webapp 스캐폴딩 | ✅ 완료 |
+| Day 9 | 검색 폼 + 결과 3탭 포팅 | ⏳ 다음 |
+| Day 10 | 예약 플로우 (/book, /book/confirm) | ⏸ 대기 |
+| Day 11 | 프로필 + 예약 이력 페이지 | ⏸ 대기 |
+| Day 12 | 익스텐션 축소 (UI 삭제, 팝업 재디자인) | ⏸ 대기 |
+| Day 13 | Content script 자동완성 (KE/JL 우선) | ⏸ 대기 |
+| Day 14 | E2E + Vercel/Railway 배포 + v0.2.0 | ⏸ 대기 |
+
 범례: ✅ 완료 · 🔄 진행 중 · ⏳ 다음 · ⏸ 대기 · ⚠️ 블록
 
 ---
+
+# Phase 1 기록 (v0.1.0 완료)
+
+> Phase 1 MVP v0.1.0 패키징 완료 (`zivo-v0.1.0.zip`). 아래 Day 1-7 체크리스트는 히스토리 보존용이며, 웹앱 피벗에 따라 익스텐션 검색/결과/예약/이력 UI 는 **Phase 2 Day 12 에서 삭제**된다. 프로필 관리와 백엔드 전체는 그대로 재사용된다.
 
 ## Day 0 — Claude 협업 기반 ✅
 
@@ -220,6 +240,145 @@
 
 ---
 
+---
+
+# Phase 2 — 웹앱 피벗 (Day 8-14)
+
+**목표**: 검색·결과·예약·이력을 Next.js 14 웹앱으로 이전한다. 익스텐션은 "탑승자 정보 관리 + 항공사 사이트 예약 폼 자동완성(content script)" 로 축소한다. 이전 익스텐션 UI 는 보존하지 않고 삭제한다. React Native 모바일은 Phase 4 로 연기.
+
+**핵심 결정 사항** (별도 플랜 문서: `~/.claude/plans/next-js-react-native-resilient-tarjan.md`)
+
+- 웹앱: Next.js 14 App Router + TS + Tailwind + TanStack Query + Zustand
+- 검색 상태: URL query string (공유/뒤로가기/SSR 호환)
+- Duffel 호출: 웹앱에서 직접 호출하지 않음 → **FastAPI 프록시 유지** (키 노출 방지)
+- 인증: Phase 2 초기 `localStorage device_id` + `X-Device-Id` 헤더 (기존 백엔드 그대로). 카카오 OAuth 는 Phase 2.5 에서 JWT httpOnly 쿠키로 결합
+- 모노레포: pnpm workspace (`webapp/`, `extension/`, `packages/types/`). `backend/` 는 Python 이라 workspace 밖
+
+## Day 8 — 모노레포 + webapp 스캐폴딩 ✅
+
+- [x] pnpm workspace 도입 (`pnpm-workspace.yaml`, 루트 `package.json` 에 `dev:web` / `dev:ext` / `dev:all` 스크립트)
+- [x] `webapp/` = `create-next-app@14 --ts --tailwind --app --src-dir` 로 초기화
+- [x] TanStack Query + Zustand 설치, `app/layout.tsx` 에 `QueryProvider` 주입
+- [x] `packages/types/` 신규 — 익스텐션 `src/lib/api.ts` 의 타입(`NormalizedOffer`, `ComboOffer`, `SearchResponse`, `ProfilePayload`, `BookingItem`) 이전, 양쪽이 `@zivo/types` 로 import
+- [x] `webapp/next.config.mjs` rewrites `/api/*` → `http://localhost:8000/api/*`
+- [x] `webapp/src/lib/deviceId.ts` — `localStorage.getItem('zivo-device-id') ?? crypto.randomUUID()` 후 저장
+- [x] `webapp/src/lib/api.ts` — `X-Device-Id` 자동 첨부하는 fetch 래퍼
+- [x] 백엔드 `CORS_ORIGINS` 에 `http://localhost:3000` 추가 (`backend/.env.example` + `backend/app/core/config.py` 기본값)
+- [ ] `pnpm dev:all` 로 backend(8000) + webapp(3000) 동시 실행 smoke (수동 확인 필요)
+
+### Day 8 완료 기준
+- [ ] `http://localhost:3000` 에서 webapp placeholder 페이지 렌더 (수동 확인)
+- [ ] webapp → `/api/health` 200 확인 (rewrite 동작, 수동 확인)
+- [ ] 같은 브라우저에서 새로고침해도 device_id 유지 (수동 확인)
+- [x] `pnpm -F zivo-extension build` 여전히 성공 (타입 분리가 기존 빌드 깨뜨리지 않음)
+
+### Day 8 Notes
+- pnpm 10.33.0 전역 설치 (`npm install -g pnpm`)
+- `packages/types/src/index.ts` — 모든 공용 타입 정의, package.json name: `@zivo/types`
+- extension `api.ts` 는 타입 정의 제거 후 `@zivo/types` 에서 re-export 패턴 유지 (하위 호환)
+- webapp `src/providers/QueryProvider.tsx` 클라이언트 컴포넌트, staleTime 5분 (Redis TTL과 일치)
+- webapp page.tsx — Zivo 홈 placeholder (검색/프로필 링크)
+
+## Day 9 — 검색 폼 + 결과 3탭 ⏸
+
+- [ ] `app/page.tsx` — SearchForm (출발/도착/가는날/오는날/인원/좌석)
+- [ ] `app/search/page.tsx` — URL query parse (`origin`, `destination`, `depart`, `return`, `pax`) → TanStack Query 로 `/api/flights/search` 호출
+- [ ] 탭 3개: 기본 / 더 싼 옵션 / 달력(placeholder)
+- [ ] `src/components/FlightCard.tsx`, `ComboCard.tsx` — 익스텐션 `OfferCard`/`ComboCard` 로직 포팅
+- [ ] 편도 조합 경고 배너 (`두 편 별개 예약, 앞 편 지연 시 자동 보호 없음`)
+- [ ] 로딩/빈 결과/에러 상태 UI
+
+### Day 9 완료 기준
+- [ ] ICN→KIX 2026-05-10 검색 시 3탭 렌더
+- [ ] 더 싼 옵션 탭에서 `savings_krw` ≥ 0 인 ComboCard 만 노출
+- [ ] URL 공유 시 같은 결과 복원 (뒤로가기 동작)
+
+## Day 10 — 예약 플로우 ⏸
+
+- [ ] `app/book/page.tsx` — `offer_id` query 로 오퍼 재조회, PassengerForm (프로필 prefill)
+- [ ] `app/book/confirm/page.tsx` — 예약 결과 + 항공사 딥링크 안내
+- [ ] `POST /api/flights/book` 호출 → `deep_link_url` 새 탭 오픈
+- [ ] 편도 조합: `combo_group_id` 로 묶어 `가는편 예약` → `오는편 예약` 두 단계
+- [ ] 가격 변동 409 `PRICE_CHANGED` 수신 시 재확인 다이얼로그
+
+### Day 10 완료 기준
+- [ ] 왕복: 확인 → 딥링크 오픈 → `/bookings` 에 row 1개
+- [ ] 편도 조합: row 2개, 동일 `combo_group_id`
+- [ ] 가격 상승 시 사용자가 취소/재확인 선택 가능
+
+## Day 11 — 프로필 + 예약 이력 ⏸
+
+- [ ] `app/profile/page.tsx` — 익스텐션 `ProfileForm.tsx` 구조 포팅
+- [ ] `webapp/src/lib/stores/profile.ts` — Zustand + localStorage 미러 (여권번호/만료일은 미러 제외)
+- [ ] `GET/PUT /api/profile` 호출, 응답 마스킹 유지
+- [ ] `app/bookings/page.tsx` — `GET /api/bookings`, 방향 배지(왕복/가는편/오는편)
+
+### Day 11 완료 기준
+- [ ] /profile 저장 후 새로고침해도 일반 필드 복원 (여권번호는 항상 빈 상태)
+- [ ] /bookings 에 Day 10 예약이 최신 순으로 노출
+- [ ] 익스텐션 팝업 프로필과 서버 상태가 일치 (양쪽 모두 PUT/GET 가능)
+
+## Day 12 — 익스텐션 축소 ⏸
+
+**삭제**
+- [ ] `extension/src/popup/App.tsx` — 전면 재작성 (기존 352줄 → 단일 화면)
+- [ ] `extension/src/popup/BookingConfirm.tsx` (154줄)
+- [ ] `extension/src/popup/BookingHistory.tsx` (98줄)
+- [ ] `extension/src/lib/store.ts` 의 `useSearchStore` (ProfileStore 만 유지)
+- [ ] `extension/src/lib/api.ts` 에서 search/book/history/alerts 호출 제거
+
+**유지**
+- [ ] `extension/src/popup/ProfileForm.tsx`
+- [ ] `extension/src/lib/storage.ts` (deviceId + ProfileCache)
+- [ ] `extension/src/lib/api.ts` 의 `getProfile`/`upsertProfile` 만
+
+**재작성**
+- [ ] 새 팝업: 상단 "Zivo 웹앱 열기" 버튼(`chrome.tabs.create({url: 'https://zivo.app'})`) + 하단 `<ProfileForm />`
+- [ ] `extension/src/background/index.ts` — 가격 폴링 alarm 제거, content script 메시지 릴레이 핸들러만
+
+### Day 12 완료 기준
+- [ ] 익스텐션 빌드 용량 감소 확인 (기존 161~168 kB → 목표 100 kB 이하)
+- [ ] 팝업에서 프로필 저장 → 웹앱 `/profile` 에서 동일 데이터 확인 (device_id 다르면 별 사용자이므로 로그인 후 자동 동기화 전제 명시)
+- [ ] 기존 vitest (`storage`/`store` 테스트) 통과
+
+## Day 13 — Content script 자동완성 ⏸
+
+- [ ] `extension/src/content/autofill.ts` 골격 + `MutationObserver` 로 input 출현 polling
+- [ ] `extension/src/content/selectors/koreanair.ts`, `jal.ts` — 사이트별 selector map (label/placeholder fuzzy matcher 우선)
+- [ ] `manifest.json` `content_scripts` 등록: `https://*.koreanair.com/*`, `https://*.jal.co.jp/*` (KE/JL 2개 먼저)
+- [ ] `chrome.runtime.sendMessage({type: 'GET_PROFILE'})` → background 가 `chrome.storage.sync` 에서 읽어 응답
+- [ ] 실패/selector 미스매치 시 토스트 "수동 입력" fallback
+- [ ] `extension/src/__tests__/autofill.test.ts` — 두 사이트 fixture 로 자동완성 단위 테스트
+
+### Day 13 완료 기준
+- [ ] 대한항공 예약 페이지에서 탑승자 성/이름/여권/생년월일 자동 입력 확인 (여권번호는 서버 복호화 흐름 필요 — 이 Day 에는 서버 호출 없이 chrome.storage.sync 의 이름/생년월일까지만 우선)
+- [ ] JAL 도 동일
+- [ ] DOM 변경으로 selector miss 시 토스트만 뜨고 페이지는 정상
+
+## Day 14 — E2E + 배포 + v0.2.0 ⏸
+
+- [ ] 3-프로세스 E2E 수동 시나리오: 웹앱 /profile → / → /search → /book → /book/confirm → /bookings → 항공사 페이지 content script 자동완성까지 끊김 없이
+- [ ] webapp Vercel preview 배포, `NEXT_PUBLIC_API_BASE` 설정
+- [ ] backend Railway 배포 (또는 Fly.io), `CORS_ORIGINS` 에 프로덕션 도메인 추가
+- [ ] 익스텐션 `.env.production` (`VITE_API_BASE=https://api.zivo.app`)
+- [ ] README.md 최종 문구 점검 (포트 표, Quick Start 동작 여부)
+- [ ] v0.2.0 git 태그 + CHANGELOG 업데이트
+- [ ] 카카오 OAuth 는 Phase 2.5 로 분리 — `backend/app/core/security.py:55-62` JWT 재사용, `POST /api/auth/kakao/exchange` + httpOnly 쿠키
+
+### Day 14 완료 기준
+- [ ] 프로덕션 URL(`https://zivo.app`) 에서 검색→예약→이력까지 동작
+- [ ] 익스텐션 프로덕션 빌드 zip 생성 (`zivo-v0.2.0.zip`)
+- [ ] pytest + vitest 전체 초록
+
+## Phase 2 Notes (공용)
+
+- **Duffel 키 노출 방지**: 웹앱은 Duffel SDK 의존성을 추가하지 않는다. 모든 항공권 호출은 FastAPI 프록시(`/api/flights/*`) 경유
+- **프로필 분리**: 웹앱(localStorage) 과 익스텐션(chrome.storage.sync) 은 device_id 가 다르다. 백엔드가 source of truth 이며, Phase 2 에서는 "로그인 후 카카오 id 기준으로 머지" 가 전제. 로그인 전에는 양쪽 프로필이 독립
+- **Content script 취약성**: 항공사 DOM 변경에 대비해 label/placeholder fuzzy matcher + 실패 시 토스트로 "수동 입력" 유도. 사이트별 selector 에 `version` 필드 포함
+- **Phase 2.5 카카오 OAuth**: Phase 2 완료 후 분리 작업. webapp `app/auth/kakao/callback/route.ts` + backend `POST /api/auth/kakao/exchange` + httpOnly 쿠키
+
+---
+
 ## 세션 간 작업 규약
 
 **새 세션 시작 시**:
@@ -247,10 +406,13 @@
 
 ## Next
 
-> **Phase 1 MVP 완료.** Phase 2 착수 시:
-> - 카카오 OAuth 연동 (Phase 2 인증)
-> - Device ID → 카카오 계정 병합 마이그레이션
-> - Kiwi Tequila / Amadeus API 추가
-> - Railway 배포
-> - 실 아이콘 디자인 교체
-> - 달력 탭 구현 (저가 날짜 히트맵)
+> **Phase 2 Day 9 — 검색 폼 + 결과 3탭 포팅.**
+>
+> 착수 지점:
+> 1. `webapp/src/app/page.tsx` — SearchForm (출발/도착/가는날/오는날/인원/좌석)
+> 2. `webapp/src/app/search/page.tsx` — URL query parse → TanStack Query `/api/flights/search`
+> 3. `src/components/FlightCard.tsx`, `ComboCard.tsx` — 익스텐션 로직 포팅
+> 4. 편도 조합 경고 배너 (두 편 별개 예약, 지연 시 자동 보호 없음)
+> 5. 로딩/빈 결과/에러 상태 UI
+>
+> 수동 smoke test 먼저 진행 (backend + webapp 동시 기동, `/api/health` 200 확인)

@@ -7,30 +7,11 @@ import type {
   BookResponse,
   BookingsListResponse,
 } from "@zivo/types";
-import { getOrCreateDeviceId } from "./storage";
-
-export type {
-  UserDefaults,
-  ProfilePayload,
-  ProfileResponse,
-  EmptyProfileResponse,
-  NormalizedOffer,
-  ComboOffer,
-  SearchResponse,
-  BookRequest,
-  BookingDetail,
-  BookResponse,
-  BookingItem,
-  BookingsListResponse,
-} from "@zivo/types";
-
-const API_BASE =
-  import.meta.env.VITE_API_BASE ??
-  (import.meta.env.DEV ? "http://localhost:8000" : "https://api.zivo.app");
+import { getOrCreateDeviceId } from "./deviceId";
 
 async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
-  const deviceId = await getOrCreateDeviceId();
-  const res = await fetch(`${API_BASE}${path}`, {
+  const deviceId = getOrCreateDeviceId();
+  const res = await fetch(path, {
     ...init,
     headers: {
       "Content-Type": "application/json",
@@ -39,7 +20,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     },
   });
   if (!res.ok) {
-    throw new Error(`API ${res.status}: ${await res.text()}`);
+    const text = await res.text();
+    const err = Object.assign(new Error(`API ${res.status}: ${text}`), {
+      status: res.status,
+      body: text,
+    });
+    throw err;
   }
   return (await res.json()) as T;
 }
@@ -47,8 +33,12 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 export const api = {
   health: () => request<{ status: string }>("/health"),
   searchFlights: (body: unknown) =>
-    request<SearchResponse>("/api/flights/search", { method: "POST", body: JSON.stringify(body) }),
-  getProfile: () => request<ProfileResponse | EmptyProfileResponse>("/api/profile"),
+    request<SearchResponse>("/api/flights/search", {
+      method: "POST",
+      body: JSON.stringify(body),
+    }),
+  getProfile: () =>
+    request<ProfileResponse | EmptyProfileResponse>("/api/profile"),
   upsertProfile: (body: ProfilePayload) =>
     request<ProfileResponse>("/api/profile", {
       method: "PUT",

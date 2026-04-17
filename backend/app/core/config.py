@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     # App
     ENVIRONMENT: str = "development"
     LOG_LEVEL: str = "INFO"
-    CORS_ORIGINS: str = "chrome-extension://*"
+    CORS_ORIGINS: str = "chrome-extension://*,http://localhost:3000"
 
     # Database
     DATABASE_URL: str

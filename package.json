@@ -1,0 +1,16 @@
+{
+  "name": "zivo-monorepo",
+  "private": true,
+  "scripts": {
+    "dev:web": "pnpm -F zivo-webapp dev",
+    "dev:ext": "pnpm -F zivo-extension dev",
+    "dev:all": "concurrently \"pnpm dev:web\" \"pnpm dev:ext\"",
+    "build:web": "pnpm -F zivo-webapp build",
+    "build:ext": "pnpm -F zivo-extension build",
+    "test:web": "pnpm -F zivo-webapp test",
+    "test:ext": "pnpm -F zivo-extension test"
+  },
+  "devDependencies": {
+    "concurrently": "^9.1.0"
+  }
+}

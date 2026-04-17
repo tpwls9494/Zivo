@@ -26,6 +26,9 @@ build/
 .cache/
 *.tsbuildinfo
 
+# Release artifacts
+*.zip
+
 # Editors
 .idea/
 .vscode/

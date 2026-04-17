@@ -17,6 +17,15 @@ class NormalizedOffer(BaseModel):
     total_krw: int
 
 
+class ComboOffer(BaseModel):
+    outbound: NormalizedOffer
+    inbound: NormalizedOffer
+    total_krw: int
+    savings_krw: int
+    savings_pct: float
+    is_same_carrier: bool
+
+
 class SearchRequest(BaseModel):
     origin: str = Field(..., min_length=3, max_length=3, pattern="^[A-Z]{3}$")
     destination: str = Field(..., min_length=3, max_length=3, pattern="^[A-Z]{3}$")
@@ -27,6 +36,6 @@ class SearchRequest(BaseModel):
 
 class SearchResponse(BaseModel):
     offers: list[NormalizedOffer]
-    combos: list  # Day 4: list[ComboOffer]
+    combos: list[ComboOffer]
     baseline_roundtrip_krw: int | None
     cached: bool = False

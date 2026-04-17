@@ -56,10 +56,40 @@ export interface EmptyProfileResponse {
   defaults: UserDefaults;
 }
 
+export interface NormalizedOffer {
+  offer_id: string;
+  carrier: string;
+  carrier_iata: string;
+  departure_iata: string;
+  arrival_iata: string;
+  departure_at: string;
+  arrival_at: string;
+  duration_minutes: number;
+  stops: number;
+  baggage_checked_kg: number;
+  total_krw: number;
+}
+
+export interface ComboOffer {
+  outbound: NormalizedOffer;
+  inbound: NormalizedOffer;
+  total_krw: number;
+  savings_krw: number;
+  savings_pct: number;
+  is_same_carrier: boolean;
+}
+
+export interface SearchResponse {
+  offers: NormalizedOffer[];
+  combos: ComboOffer[];
+  baseline_roundtrip_krw: number | null;
+  cached: boolean;
+}
+
 export const api = {
   health: () => request<{ status: string }>("/health"),
   searchFlights: (body: unknown) =>
-    request("/api/flights/search", { method: "POST", body: JSON.stringify(body) }),
+    request<SearchResponse>("/api/flights/search", { method: "POST", body: JSON.stringify(body) }),
   getProfile: () => request<ProfileResponse | EmptyProfileResponse>("/api/profile"),
   upsertProfile: (body: ProfilePayload) =>
     request<ProfileResponse>("/api/profile", {

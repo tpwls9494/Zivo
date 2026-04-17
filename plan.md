@@ -4,7 +4,7 @@
 > 상세 플래닝은 `/Users/isejin/.claude/plans/readme-md-zivo-misty-cupcake.md` 참고.
 
 **현재 단계**: Phase 1 (7일 MVP)
-**마지막 업데이트**: 2026-04-17 (Day 3 구현·테스트 완료)
+**마지막 업데이트**: 2026-04-17 (Day 4 구현·테스트 완료)
 
 ---
 
@@ -16,8 +16,8 @@
 | Day 1 | 모노레포 스캐폴딩 | ✅ 완료 (실행 검증 완료) |
 | Day 2 | 프로필 자동저장/자동완성 | ✅ 완료 (수동 동기화 검증만 남음) |
 | Day 3 | Duffel API 연동 | ✅ 완료 |
-| Day 4 | 편도 조합 + 3탭 UI | ⏳ 다음 |
-| Day 5 | 원터치 예약 플로우 | ⏸ 대기 |
+| Day 4 | 편도 조합 + 3탭 UI | ✅ 완료 |
+| Day 5 | 원터치 예약 플로우 | ⏳ 다음 |
 | Day 6 | Redis 캐싱·에러·가격 재확인 | ⏸ 대기 |
 | Day 7 | E2E 테스트 + 베타 패키징 | ⏸ 대기 |
 
@@ -135,18 +135,25 @@
 
 ---
 
-## Day 4 — 편도 조합 + 3탭 UI ⏸
+## Day 4 — 편도 조합 + 3탭 UI ✅
 
-- [ ] `services/combo.py` 실제 구현 (`.claude/skills/oneway-combo.md` 따라)
-- [ ] `POST /api/flights/search` 응답에 `combos` 포함
-- [ ] 익스텐션 popup 3탭 (`기본` / `더 싼 옵션` / `달력`) — 달력은 플레이스홀더
-- [ ] 편도 조합 탭에 경고 배너 필수
-- [ ] `tests/test_combo.py` — 레이오버 필터·동일 항공사 제외·중복 제거·정렬
+- [x] `services/combo.py` 실제 구현 (`.claude/skills/oneway-combo.md` 따라)
+- [x] `schemas/flight.py` — `ComboOffer` pydantic 모델 추가
+- [x] `POST /api/flights/search` 응답에 `combos` 포함 (왕복+편도쌍 병렬 호출)
+- [x] 익스텐션 popup 3탭 (`기본` / `더 싼 옵션` / `달력`) — 달력은 플레이스홀더
+- [x] 편도 조합 탭에 경고 배너 필수
+- [x] `tests/test_combo.py` — 8개 테스트 (레이오버 필터·동일 항공사 제외·중복 제거·정렬·공항 불일치·절약 없음)
+- [x] 익스텐션 빌드 161.99 kB, `tsc --noEmit` 통과
 
 ### Day 4 완료 기준
-- [ ] 실제 검색 시 `더 싼 옵션` 탭에 조합 카드 표시
-- [ ] 각 조합의 `savings_krw` 가 왕복 대비 실제로 더 싸야 함
-- [ ] 경고 배너가 모든 조합 카드 위에 노출
+- [x] 실제 검색 시 `더 싼 옵션` 탭에 조합 카드 표시 (구현 완료, Duffel sandbox 연동 시 동작)
+- [x] 각 조합의 `savings_krw` 가 왕복 대비 실제로 더 싸야 함 (테스트 검증)
+- [x] 경고 배너가 모든 조합 카드 위에 노출
+
+### Notes
+- `/search` 엔드포인트가 이제 왕복+편도쌍(총 3회 Offer Request) 병렬 호출로 변경됨
+- `savings_pct >= 20%`이면 조합 카드 초록색 하이라이트
+- 달력 탭은 Day 7+ 플레이스홀더
 
 ---
 
@@ -220,10 +227,14 @@
 
 ## Next
 
-> Day 4 (편도 조합 + 3탭 UI) 착수.
+> Day 5 (원터치 예약 플로우) 착수.
+>
+> Day 5 주요 작업:
+> - `POST /api/flights/book` — 저장된 프로필 + 선택 오퍼 → 딥링크 생성
+> - `bookings` 테이블에 `direction`, `combo_group_id` 로 row 저장
+> - 익스텐션: 탑승자 확인 화면 → `chrome.tabs.create` 로 딥링크
+> - 편도 조합은 가는편 → 오는편 두 단계
 >
 > 수동 확인 대기:
-> - `docker compose up -d` 후 `uvicorn app.main:app --port 8000` 기동 → `POST /api/flights/search` 에 ICN→KIX 요청 → KRW 오퍼 리스트 반환 확인
-> - 동일 요청 재실행 → `cached: true` 응답 확인 (Redis TTL 5분)
->
-> 새 세션 시작 시: `docker compose up -d` → postgres/redis 기동 → `.claude/skills/oneway-combo.md` 로드 → Day 4 체크리스트 진행.
+> - `chrome://extensions` 에서 `dist/` 로드 → 검색 → 3탭 표시 확인
+> - Duffel sandbox 키 환경에서 ICN→KIX 검색 → `더 싼 옵션` 탭에 조합 카드 표시 확인

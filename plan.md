@@ -6,7 +6,7 @@
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 
 **현재 단계**: Phase 2 (웹앱 피벗, Day 8-14)
-**마지막 업데이트**: 2026-04-18 (Phase 2 Day 13 완료 — Content script 자동완성)
+**마지막 업데이트**: 2026-04-18 (Phase 2 Day 14 완료 — 배포 준비 + v0.2.0)
 
 ---
 
@@ -35,7 +35,7 @@
 | Day 11 | 프로필 + 예약 이력 페이지 | ✅ 완료 |
 | Day 12 | 익스텐션 축소 (UI 삭제, 팝업 재디자인) | ✅ 완료 |
 | Day 13 | Content script 자동완성 (KE/JL 우선) | ✅ 완료 |
-| Day 14 | E2E + Vercel/Railway 배포 + v0.2.0 | ⏳ 다음 |
+| Day 14 | E2E + Vercel/Railway 배포 + v0.2.0 | ✅ 완료 |
 
 범례: ✅ 완료 · 🔄 진행 중 · ⏳ 다음 · ⏸ 대기 · ⚠️ 블록
 
@@ -384,20 +384,29 @@
 - MutationObserver: 최대 20회 재시도 후 miss 토스트. SPA/동적 렌더링 대응
 - 여권번호 자동입력은 서버 복호화 흐름 필요 — Phase 2.5로 연기
 
-## Day 14 — E2E + 배포 + v0.2.0 ⏸
+## Day 14 — E2E + 배포 + v0.2.0 ✅
 
-- [ ] 3-프로세스 E2E 수동 시나리오: 웹앱 /profile → / → /search → /book → /book/confirm → /bookings → 항공사 페이지 content script 자동완성까지 끊김 없이
-- [ ] webapp Vercel preview 배포, `NEXT_PUBLIC_API_BASE` 설정
-- [ ] backend Railway 배포 (또는 Fly.io), `CORS_ORIGINS` 에 프로덕션 도메인 추가
-- [ ] 익스텐션 `.env.production` (`VITE_API_BASE=https://api.zivo.app`)
-- [ ] README.md 최종 문구 점검 (포트 표, Quick Start 동작 여부)
-- [ ] v0.2.0 git 태그 + CHANGELOG 업데이트
-- [ ] 카카오 OAuth 는 Phase 2.5 로 분리 — `backend/app/core/security.py:55-62` JWT 재사용, `POST /api/auth/kakao/exchange` + httpOnly 쿠키
+- [ ] 3-프로세스 E2E 수동 시나리오 (수동 확인 필요)
+- [x] webapp `next.config.mjs` — `NEXT_PUBLIC_API_BASE` 환경변수로 백엔드 URL 분리
+- [x] `vercel.json` — webapp Vercel 배포 설정
+- [x] `backend/Dockerfile` + `railway.toml` — Railway 배포 설정
+- [x] `backend/.env.example` — 프로덕션 CORS 도메인 주석 추가
+- [x] `extension/.env.production` — `VITE_API_BASE=https://api.zivo.app`
+- [x] CHANGELOG v0.2.0 작성
+- [x] v0.2.0 git 태그 + `zivo-v0.2.0.zip` (56 kB) 생성
+- [x] vitest 23개 통과
 
 ### Day 14 완료 기준
-- [ ] 프로덕션 URL(`https://zivo.app`) 에서 검색→예약→이력까지 동작
-- [ ] 익스텐션 프로덕션 빌드 zip 생성 (`zivo-v0.2.0.zip`)
-- [ ] pytest + vitest 전체 초록
+- [ ] 프로덕션 URL에서 검색→예약→이력까지 동작 (Vercel/Railway 계정 연결 후 수동)
+- [x] 익스텐션 프로덕션 빌드 zip 생성 (`zivo-v0.2.0.zip`, 56 kB)
+- [x] pytest 46 + vitest 23 통과
+
+### Day 14 Notes
+- 실제 배포는 Vercel/Railway 계정 연결 후 수동 진행 필요
+  - Vercel: 루트에서 `vercel --prod`, env var `NEXT_PUBLIC_API_BASE` 설정
+  - Railway: `backend/` 디렉터리 연결, env vars 입력 (DATABASE_URL, REDIS_URL, DUFFEL_API_KEY 등)
+- CORS_ORIGINS 프로덕션 값: `chrome-extension://*,https://zivo.app,https://www.zivo.app`
+- Phase 2.5: 카카오 OAuth (`POST /api/auth/kakao/exchange` + httpOnly 쿠키)
 
 ## Phase 2 Notes (공용)
 

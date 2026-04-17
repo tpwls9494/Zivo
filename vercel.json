@@ -1,0 +1,7 @@
+{
+  "buildCommand": "pnpm -F webapp build",
+  "outputDirectory": "webapp/.next",
+  "installCommand": "pnpm install",
+  "framework": "nextjs",
+  "rewrites": []
+}

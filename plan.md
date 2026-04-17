@@ -6,7 +6,7 @@
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 
 **현재 단계**: Phase 2 (웹앱 피벗, Day 8-14)
-**마지막 업데이트**: 2026-04-18 (Phase 2 Day 11 완료 — 프로필 + 예약 이력)
+**마지막 업데이트**: 2026-04-18 (Phase 2 Day 12 완료 — 익스텐션 축소)
 
 ---
 
@@ -33,8 +33,8 @@
 | Day 9 | 검색 폼 + 결과 3탭 포팅 | ✅ 완료 |
 | Day 10 | 예약 플로우 (/book, /book/confirm) | ✅ 완료 |
 | Day 11 | 프로필 + 예약 이력 페이지 | ✅ 완료 |
-| Day 12 | 익스텐션 축소 (UI 삭제, 팝업 재디자인) | ⏸ 대기 |
-| Day 13 | Content script 자동완성 (KE/JL 우선) | ⏸ 대기 |
+| Day 12 | 익스텐션 축소 (UI 삭제, 팝업 재디자인) | ✅ 완료 |
+| Day 13 | Content script 자동완성 (KE/JL 우선) | ⏳ 다음 |
 | Day 14 | E2E + Vercel/Railway 배포 + v0.2.0 | ⏸ 대기 |
 
 범례: ✅ 완료 · 🔄 진행 중 · ⏳ 다음 · ⏸ 대기 · ⚠️ 블록
@@ -335,28 +335,33 @@
 - 여권번호·만료일은 `saveCache`에서 destructure로 제거 후 저장
 - bookings 페이지: 방향 배지 색상 — 왕복(blue), 가는편(indigo), 오는편(purple)
 
-## Day 12 — 익스텐션 축소 ⏸
+## Day 12 — 익스텐션 축소 ✅
 
 **삭제**
-- [ ] `extension/src/popup/App.tsx` — 전면 재작성 (기존 352줄 → 단일 화면)
-- [ ] `extension/src/popup/BookingConfirm.tsx` (154줄)
-- [ ] `extension/src/popup/BookingHistory.tsx` (98줄)
-- [ ] `extension/src/lib/store.ts` 의 `useSearchStore` (ProfileStore 만 유지)
-- [ ] `extension/src/lib/api.ts` 에서 search/book/history/alerts 호출 제거
+- [x] `extension/src/popup/App.tsx` — 전면 재작성 (기존 352줄 → 28줄)
+- [x] `extension/src/popup/BookingConfirm.tsx` (154줄) — 삭제
+- [x] `extension/src/popup/BookingHistory.tsx` (98줄) — 삭제
+- [x] `extension/src/lib/store.ts` 의 `useSearchStore` (ProfileStore 만 유지)
+- [x] `extension/src/lib/api.ts` 에서 search/book/history 호출 제거
 
 **유지**
-- [ ] `extension/src/popup/ProfileForm.tsx`
-- [ ] `extension/src/lib/storage.ts` (deviceId + ProfileCache)
-- [ ] `extension/src/lib/api.ts` 의 `getProfile`/`upsertProfile` 만
+- [x] `extension/src/popup/ProfileForm.tsx`
+- [x] `extension/src/lib/storage.ts` (deviceId + ProfileCache)
+- [x] `extension/src/lib/api.ts` 의 `getProfile`/`upsertProfile` 만
 
 **재작성**
-- [ ] 새 팝업: 상단 "Zivo 웹앱 열기" 버튼(`chrome.tabs.create({url: 'https://zivo.app'})`) + 하단 `<ProfileForm />`
-- [ ] `extension/src/background/index.ts` — 가격 폴링 alarm 제거, content script 메시지 릴레이 핸들러만
+- [x] 새 팝업: 상단 "Zivo 웹앱 열기" 버튼(`chrome.tabs.create({url: 'https://zivo.app'})`) + 하단 `<ProfileForm />`
+- [x] `extension/src/background/index.ts` — 가격 폴링 alarm 제거, content script 메시지 릴레이 핸들러만
 
 ### Day 12 완료 기준
-- [ ] 익스텐션 빌드 용량 감소 확인 (기존 161~168 kB → 목표 100 kB 이하)
-- [ ] 팝업에서 프로필 저장 → 웹앱 `/profile` 에서 동일 데이터 확인 (device_id 다르면 별 사용자이므로 로그인 후 자동 동기화 전제 명시)
-- [ ] 기존 vitest (`storage`/`store` 테스트) 통과
+- [x] 익스텐션 빌드 성공 — 156.26 kB (React+Zustand 포함이라 100 kB 미달성, gzip 49.98 kB)
+- [ ] 팝업에서 프로필 저장 → 웹앱 `/profile` 에서 동일 데이터 확인 (수동)
+- [x] 기존 vitest (`storage`/`store` 테스트) 15개 통과
+
+### Day 12 Notes
+- `useSearchStore` 제거에 따라 `store.test.ts`에서 관련 테스트 2개 제거 (총 15개 테스트 유지)
+- React+Zustand 자체 번들 때문에 100 kB 목표 미달성 — 빌드 자체는 정상
+- `background/index.ts`: price-poll alarm 제거, `GET_PROFILE` 메시지 릴레이만 유지 (Day 13 content script 대비)
 
 ## Day 13 — Content script 자동완성 ⏸
 
@@ -423,10 +428,10 @@
 
 ## Next
 
-> **Phase 2 Day 12 — 익스텐션 축소 착수.**
+> **Phase 2 Day 13 — Content script 자동완성 착수.**
 >
 > 착수 지점:
-> 1. `extension/src/popup/App.tsx` 전면 재작성 — "Zivo 웹앱 열기" 버튼 + ProfileForm
-> 2. `BookingConfirm.tsx`, `BookingHistory.tsx` 삭제
-> 3. `store.ts`에서 `useSearchStore` 제거, `api.ts`에서 search/book/history 호출 제거
-> 4. `background/index.ts` — 가격 폴링 alarm 제거, content script 릴레이만 유지
+> 1. `extension/src/content/autofill.ts` 골격 작성 + `MutationObserver` polling
+> 2. `extension/src/content/selectors/koreanair.ts`, `jal.ts` selector map 작성
+> 3. `manifest.json` `content_scripts` 등록 (KE/JL 2개 우선)
+> 4. `chrome.runtime.sendMessage({type: 'GET_PROFILE'})` → background 릴레이 연동

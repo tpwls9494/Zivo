@@ -1,10 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { useSearchStore, useProfileStore } from "../lib/store";
+import { useProfileStore } from "../lib/store";
 import * as apiModule from "../lib/api";
 
-// reset zustand stores between tests
 beforeEach(() => {
-  useSearchStore.setState({ origin: "ICN", destination: "", depart: "", ret: "" });
   useProfileStore.setState({
     passport_given_name: "",
     passport_family_name: "",
@@ -26,17 +24,6 @@ beforeEach(() => {
       adults: 1,
       baggage_preference: "any",
     },
-  });
-});
-
-describe("useSearchStore", () => {
-  it("has ICN as default origin", () => {
-    expect(useSearchStore.getState().origin).toBe("ICN");
-  });
-
-  it("setField updates state", () => {
-    useSearchStore.getState().setField("destination", "KIX");
-    expect(useSearchStore.getState().destination).toBe("KIX");
   });
 });
 

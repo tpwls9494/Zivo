@@ -2,10 +2,6 @@ import type {
   ProfilePayload,
   ProfileResponse,
   EmptyProfileResponse,
-  SearchResponse,
-  BookRequest,
-  BookResponse,
-  BookingsListResponse,
 } from "@zivo/types";
 import { getOrCreateDeviceId } from "./storage";
 
@@ -14,14 +10,6 @@ export type {
   ProfilePayload,
   ProfileResponse,
   EmptyProfileResponse,
-  NormalizedOffer,
-  ComboOffer,
-  SearchResponse,
-  BookRequest,
-  BookingDetail,
-  BookResponse,
-  BookingItem,
-  BookingsListResponse,
 } from "@zivo/types";
 
 const API_BASE =
@@ -46,18 +34,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 export const api = {
   health: () => request<{ status: string }>("/health"),
-  searchFlights: (body: unknown) =>
-    request<SearchResponse>("/api/flights/search", { method: "POST", body: JSON.stringify(body) }),
   getProfile: () => request<ProfileResponse | EmptyProfileResponse>("/api/profile"),
   upsertProfile: (body: ProfilePayload) =>
     request<ProfileResponse>("/api/profile", {
       method: "PUT",
       body: JSON.stringify(body),
     }),
-  book: (body: BookRequest) =>
-    request<BookResponse>("/api/flights/book", {
-      method: "POST",
-      body: JSON.stringify(body),
-    }),
-  listBookings: () => request<BookingsListResponse>("/api/bookings"),
 };

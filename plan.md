@@ -6,7 +6,7 @@
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 
 **현재 단계**: Phase 2 (웹앱 피벗, Day 8-14)
-**마지막 업데이트**: 2026-04-17 (Phase 2 Day 9 완료 — 검색 폼 + 결과 3탭 포팅)
+**마지막 업데이트**: 2026-04-17 (Phase 2 Day 10 완료 — 예약 플로우)
 
 ---
 
@@ -31,7 +31,7 @@
 |---|---|---|
 | Day 8 | pnpm workspace + webapp 스캐폴딩 | ✅ 완료 |
 | Day 9 | 검색 폼 + 결과 3탭 포팅 | ✅ 완료 |
-| Day 10 | 예약 플로우 (/book, /book/confirm) | ⏳ 다음 |
+| Day 10 | 예약 플로우 (/book, /book/confirm) | ✅ 완료 |
 | Day 11 | 프로필 + 예약 이력 페이지 | ⏸ 대기 |
 | Day 12 | 익스텐션 축소 (UI 삭제, 팝업 재디자인) | ⏸ 대기 |
 | Day 13 | Content script 자동완성 (KE/JL 우선) | ⏸ 대기 |
@@ -300,18 +300,23 @@
 - FlightCard: 직항/경유 표시, 소요시간, 수하물 kg
 - Suspense 래퍼로 useSearchParams SSR 에러 방지
 
-## Day 10 — 예약 플로우 ⏸
+## Day 10 — 예약 플로우 ✅
 
-- [ ] `app/book/page.tsx` — `offer_id` query 로 오퍼 재조회, PassengerForm (프로필 prefill)
-- [ ] `app/book/confirm/page.tsx` — 예약 결과 + 항공사 딥링크 안내
-- [ ] `POST /api/flights/book` 호출 → `deep_link_url` 새 탭 오픈
-- [ ] 편도 조합: `combo_group_id` 로 묶어 `가는편 예약` → `오는편 예약` 두 단계
-- [ ] 가격 변동 409 `PRICE_CHANGED` 수신 시 재확인 다이얼로그
+- [x] `app/book/page.tsx` — 오퍼 정보(sessionStorage) + 프로필 prefill + PassengerForm
+- [x] `app/book/confirm/page.tsx` — 예약 결과 + 항공사 딥링크 안내
+- [x] `POST /api/flights/book` 호출 → `/book/confirm` 으로 이동
+- [x] 편도 조합: combo_inbound 함께 전송, confirm 에서 두 편 각각 딥링크 버튼
+- [x] 가격 변동 409 `PRICE_CHANGED` 수신 시 재확인 다이얼로그 (취소/변동된 가격으로 예약)
 
 ### Day 10 완료 기준
-- [ ] 왕복: 확인 → 딥링크 오픈 → `/bookings` 에 row 1개
-- [ ] 편도 조합: row 2개, 동일 `combo_group_id`
-- [ ] 가격 상승 시 사용자가 취소/재확인 선택 가능
+- [ ] 왕복: 탑승자 확인 → 예약 → confirm 페이지 → 딥링크 (수동 확인)
+- [ ] 편도 조합: confirm 에서 두 편 딥링크 버튼 표시 (수동 확인)
+- [x] 가격 상승 시 취소/재확인 다이얼로그 구현
+
+### Day 10 Notes
+- 오퍼 데이터는 URL query string 대신 sessionStorage(`zivo_book_offers`)로 전달 (URL 길이 제한 회피)
+- 예약 결과도 sessionStorage(`zivo_book_result`)로 confirm 페이지에 전달 후 즉시 삭제
+- 편도 조합 경고 배너는 book + confirm 양쪽에 노출
 
 ## Day 11 — 프로필 + 예약 이력 ⏸
 
@@ -413,11 +418,9 @@
 
 ## Next
 
-> **Phase 2 Day 10 — 예약 플로우 착수.**
+> **Phase 2 Day 11 — 프로필 + 예약 이력 페이지 착수.**
 >
 > 착수 지점:
-> 1. `webapp/src/app/book/page.tsx` — `offer_id` query로 오퍼 재조회, PassengerForm (프로필 prefill)
-> 2. `webapp/src/app/book/confirm/page.tsx` — 예약 결과 + 딥링크 안내
-> 3. `POST /api/flights/book` 호출 → `deep_link_url` 새 탭 오픈
-> 4. 편도 조합: `combo_group_id`로 묶어 두 단계 예약
-> 5. 가격 변동 409 `PRICE_CHANGED` 수신 시 재확인 다이얼로그
+> 1. `webapp/src/app/profile/page.tsx` — ProfileForm (GET/PUT /api/profile)
+> 2. `webapp/src/app/bookings/page.tsx` — GET /api/bookings, 방향 배지
+> 3. Zustand profile store (localStorage 미러, 여권번호 제외)

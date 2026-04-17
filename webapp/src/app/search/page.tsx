@@ -39,10 +39,15 @@ function SearchResults() {
   });
 
   function handleBook(offer: NormalizedOffer) {
+    sessionStorage.setItem("zivo_book_offers", JSON.stringify({ offer }));
     router.push(`/book?offer_id=${offer.offer_id}`);
   }
 
   function handleComboBook(outbound: NormalizedOffer, inbound: NormalizedOffer) {
+    sessionStorage.setItem(
+      "zivo_book_offers",
+      JSON.stringify({ offer: outbound, comboInbound: inbound })
+    );
     router.push(
       `/book?offer_id=${outbound.offer_id}&combo_inbound_id=${inbound.offer_id}&combo=true`
     );

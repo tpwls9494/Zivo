@@ -1,0 +1,21 @@
+{
+  "manifest_version": 3,
+  "name": "Zivo",
+  "version": "0.1.0",
+  "description": "한일 노선 항공권 편도 조합 최저가 & 원터치 예약",
+  "action": {
+    "default_popup": "src/popup/index.html",
+    "default_title": "Zivo"
+  },
+  "background": {
+    "service_worker": "src/background/index.ts",
+    "type": "module"
+  },
+  "permissions": ["storage", "alarms", "tabs"],
+  "host_permissions": ["http://localhost:8000/*", "https://api.zivo.app/*"],
+  "icons": {
+    "16": "src/assets/icon-16.png",
+    "48": "src/assets/icon-48.png",
+    "128": "src/assets/icon-128.png"
+  }
+}

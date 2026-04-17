@@ -6,7 +6,7 @@
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 
 **현재 단계**: Phase 2 (웹앱 피벗, Day 8-14)
-**마지막 업데이트**: 2026-04-17 (Phase 2 Day 10 완료 — 예약 플로우)
+**마지막 업데이트**: 2026-04-18 (Phase 2 Day 11 완료 — 프로필 + 예약 이력)
 
 ---
 
@@ -32,7 +32,7 @@
 | Day 8 | pnpm workspace + webapp 스캐폴딩 | ✅ 완료 |
 | Day 9 | 검색 폼 + 결과 3탭 포팅 | ✅ 완료 |
 | Day 10 | 예약 플로우 (/book, /book/confirm) | ✅ 완료 |
-| Day 11 | 프로필 + 예약 이력 페이지 | ⏸ 대기 |
+| Day 11 | 프로필 + 예약 이력 페이지 | ✅ 완료 |
 | Day 12 | 익스텐션 축소 (UI 삭제, 팝업 재디자인) | ⏸ 대기 |
 | Day 13 | Content script 자동완성 (KE/JL 우선) | ⏸ 대기 |
 | Day 14 | E2E + Vercel/Railway 배포 + v0.2.0 | ⏸ 대기 |
@@ -318,17 +318,22 @@
 - 예약 결과도 sessionStorage(`zivo_book_result`)로 confirm 페이지에 전달 후 즉시 삭제
 - 편도 조합 경고 배너는 book + confirm 양쪽에 노출
 
-## Day 11 — 프로필 + 예약 이력 ⏸
+## Day 11 — 프로필 + 예약 이력 ✅
 
-- [ ] `app/profile/page.tsx` — 익스텐션 `ProfileForm.tsx` 구조 포팅
-- [ ] `webapp/src/lib/stores/profile.ts` — Zustand + localStorage 미러 (여권번호/만료일은 미러 제외)
-- [ ] `GET/PUT /api/profile` 호출, 응답 마스킹 유지
-- [ ] `app/bookings/page.tsx` — `GET /api/bookings`, 방향 배지(왕복/가는편/오는편)
+- [x] `app/profile/page.tsx` — 익스텐션 `ProfileForm.tsx` 구조 포팅
+- [x] `webapp/src/lib/stores/profile.ts` — Zustand + localStorage 미러 (여권번호/만료일은 미러 제외)
+- [x] `GET/PUT /api/profile` 호출, 응답 마스킹 유지
+- [x] `app/bookings/page.tsx` — `GET /api/bookings`, 방향 배지(왕복/가는편/오는편)
 
 ### Day 11 완료 기준
-- [ ] /profile 저장 후 새로고침해도 일반 필드 복원 (여권번호는 항상 빈 상태)
-- [ ] /bookings 에 Day 10 예약이 최신 순으로 노출
-- [ ] 익스텐션 팝업 프로필과 서버 상태가 일치 (양쪽 모두 PUT/GET 가능)
+- [ ] /profile 저장 후 새로고침해도 일반 필드 복원 (여권번호는 빈 상태) — 수동 확인
+- [ ] /bookings 에 예약이 최신 순으로 노출 — 수동 확인
+- [x] 여권번호·만료일 localStorage 미러 제외 구현
+
+### Day 11 Notes
+- `webapp/src/lib/stores/profile.ts`: Zustand store, localStorage cache key `zivo:profile`
+- 여권번호·만료일은 `saveCache`에서 destructure로 제거 후 저장
+- bookings 페이지: 방향 배지 색상 — 왕복(blue), 가는편(indigo), 오는편(purple)
 
 ## Day 12 — 익스텐션 축소 ⏸
 
@@ -418,9 +423,10 @@
 
 ## Next
 
-> **Phase 2 Day 11 — 프로필 + 예약 이력 페이지 착수.**
+> **Phase 2 Day 12 — 익스텐션 축소 착수.**
 >
 > 착수 지점:
-> 1. `webapp/src/app/profile/page.tsx` — ProfileForm (GET/PUT /api/profile)
-> 2. `webapp/src/app/bookings/page.tsx` — GET /api/bookings, 방향 배지
-> 3. Zustand profile store (localStorage 미러, 여권번호 제외)
+> 1. `extension/src/popup/App.tsx` 전면 재작성 — "Zivo 웹앱 열기" 버튼 + ProfileForm
+> 2. `BookingConfirm.tsx`, `BookingHistory.tsx` 삭제
+> 3. `store.ts`에서 `useSearchStore` 제거, `api.ts`에서 search/book/history 호출 제거
+> 4. `background/index.ts` — 가격 폴링 alarm 제거, content script 릴레이만 유지

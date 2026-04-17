@@ -4,7 +4,7 @@
 > 상세 플래닝은 `/Users/isejin/.claude/plans/readme-md-zivo-misty-cupcake.md` 참고.
 
 **현재 단계**: Phase 1 (7일 MVP)
-**마지막 업데이트**: 2026-04-17 (Day 1 실행 검증 완료, 첫 커밋)
+**마지막 업데이트**: 2026-04-17 (Day 2 구현·테스트 완료)
 
 ---
 
@@ -14,8 +14,8 @@
 |---|---|---|
 | Day 0 | Claude 협업 기반 (CLAUDE.md + skills) | ✅ 완료 |
 | Day 1 | 모노레포 스캐폴딩 | ✅ 완료 (실행 검증 완료) |
-| Day 2 | 프로필 자동저장/자동완성 | ⏳ 다음 |
-| Day 3 | Duffel API 연동 | ⏸ 대기 |
+| Day 2 | 프로필 자동저장/자동완성 | ✅ 완료 (수동 동기화 검증만 남음) |
+| Day 3 | Duffel API 연동 | ⏳ 다음 |
 | Day 4 | 편도 조합 + 3탭 UI | ⏸ 대기 |
 | Day 5 | 원터치 예약 플로우 | ⏸ 대기 |
 | Day 6 | Redis 캐싱·에러·가격 재확인 | ⏸ 대기 |
@@ -76,33 +76,41 @@
 
 ---
 
-## Day 2 — 프로필 자동저장/자동완성 ⏳
+## Day 2 — 프로필 자동저장/자동완성 ✅
 
 **목표**: Popup 에서 여권 영문명·연락처·자주 가는 노선 입력 → 백엔드 저장 + `chrome.storage.sync` 캐시 → 다음 방문 시 자동 복원.
 
 ### 백엔드
-- [ ] `schemas/profile.py` — pydantic 요청/응답 모델
-- [ ] `schemas/user_default.py`
-- [ ] `api/v1/profile.py`
-  - [ ] `GET /api/profile` — `X-Device-Id` 헤더로 사용자 조회 (없으면 자동 생성)
-  - [ ] `PUT /api/profile` — upsert
-- [ ] `services/user.py` — `get_or_create_user(device_id)` (Phase 2 카카오 로그인 대비 독립)
-- [ ] 여권번호·여권만료일은 `encrypt_sensitive()` 경유 저장, 응답 시 마스킹만
-- [ ] `tests/test_profile_api.py`
+- [x] `schemas/profile.py` — pydantic 요청/응답 모델 (`ProfileIn`, `ProfileOut`, `EmptyProfileOut`)
+- [x] `schemas/user_default.py`
+- [x] `api/v1/profile.py`
+  - [x] `GET /api/profile` — `X-Device-Id` 헤더로 사용자 조회 (없으면 자동 생성, 기본 `UserDefault` 도 자동 생성)
+  - [x] `PUT /api/profile` — upsert, 여권번호·만료일 AES 암호화 저장
+- [x] `services/user.py` — `get_or_create_user(device_id)` (Phase 2 카카오 로그인 대비 독립)
+- [x] 여권번호·여권만료일은 `encrypt_sensitive()` 경유 저장, 응답 시 마스킹만 (평문 만료일은 미노출)
+- [x] `tests/conftest.py` — NullPool 엔진 fixture (pytest-asyncio 루프 격리)
+- [x] `tests/test_profile_api.py` — 8개 테스트 통과 (누적 9/9)
 
 ### 익스텐션
-- [ ] `popup/ProfileForm.tsx` — 여권 영문명/생년월일/연락처/자주 가는 노선 입력
-- [ ] `popup/App.tsx` 에 프로필 탭 추가 (또는 별도 screen)
-- [ ] `lib/store.ts` 에 `profileStore` 추가
-- [ ] `lib/api.ts` 의 `getProfile/upsertProfile` 실제 호출
-- [ ] 여권번호는 입력만 받고 **로컬에 저장하지 않음** (백엔드로만)
-- [ ] 일반 필드는 `chrome.storage.sync` 에도 저장 (오프라인 자동완성)
+- [x] `popup/ProfileForm.tsx` — 여권 영문명/생년월일/연락처/여권/기본값 입력 폼
+- [x] `popup/App.tsx` 에 `검색` / `프로필` 탭 추가
+- [x] `lib/store.ts` 에 `useProfileStore` (Zustand) 추가 — load/save + 민감정보 로컬 제외
+- [x] `lib/api.ts` 의 `getProfile/upsertProfile` 타입 포함 실제 호출
+- [x] 여권번호는 입력만 받고 **로컬에 저장하지 않음** (백엔드로만; `saveProfileCache` 방어 스트립)
+- [x] 일반 필드는 `chrome.storage.sync:zivo:profile` 에도 저장 (오프라인 자동완성)
+- [x] 빌드 157.93 kB, `tsc --noEmit` 통과
 
 ### Day 2 완료 기준
-- [ ] popup 프로필 저장 → 닫았다 열면 폼에 자동 복원
+- [x] 백엔드: GET/PUT roundtrip + 마스킹 + AES 암호화 DB 검증 (pytest)
+- [ ] popup 프로필 저장 → 닫았다 열면 폼에 자동 복원 (수동 체크 필요)
 - [ ] 두 번째 크롬 기기에서 같은 계정으로 로그인 시 프로필 동기화 확인 (수동)
-- [ ] 여권번호는 `chrome.storage.sync.get(null)` 에서 **보이지 않아야 함**
-- [ ] 백엔드 DB `user_profiles` 테이블에 AES 암호화된 값 저장 확인
+- [x] 여권번호 캐시 차단: `storage.ts` 에서 passport_number/expiry 키 스트립
+- [x] 백엔드 DB `user_profiles` 테이블에 AES 암호화된 값 저장 확인 (test_profile_upsert_encrypts_passport_in_db)
+
+### Notes
+- 테스트 환경: pytest-asyncio 가 테스트마다 새 이벤트 루프를 만들어 전역 engine 의 연결이 stale 되는 문제를 conftest 에서 NullPool 엔진으로 대체해 해결
+- ruff: FastAPI `Depends()` 인자 기본값 패턴을 위해 `B008` 을 ignore 에 추가
+- 여권 만료일은 응답 스키마에서 `None` 으로 고정 — Day 5 예약 플로우에서만 서버 내부 복호화 사용
 
 ---
 
@@ -206,6 +214,8 @@
 
 ## Next
 
-> Day 2 (프로필 자동저장) 착수. 크롬에 `extension/dist` 수동 로드해 popup 열리는지 눈으로 확인한 뒤 시작 권장.
+> Day 3 (Duffel API 연동) 착수. `DUFFEL_API_KEY=duffel_test_...` 을 `backend/.env` 에 먼저 추가할 것.
 >
-> 새 세션 시작 시: `source backend/.venv/bin/activate` → 이어서 작업.
+> 수동 확인 대기: 크롬에 `extension/dist` 재로드 → `프로필` 탭에서 저장 → 팝업 닫았다 다시 열면 자동 복원되는지 확인. `chrome.storage.sync.get(null)` 에 `passport_number` 가 없어야 함.
+>
+> 새 세션 시작 시: `docker compose up -d` → postgres/redis 기동 → 이어서 작업.

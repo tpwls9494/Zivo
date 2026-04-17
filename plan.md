@@ -6,7 +6,7 @@
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 
 **현재 단계**: Phase 2 (웹앱 피벗, Day 8-14)
-**마지막 업데이트**: 2026-04-18 (Phase 2 Day 12 완료 — 익스텐션 축소)
+**마지막 업데이트**: 2026-04-18 (Phase 2 Day 13 완료 — Content script 자동완성)
 
 ---
 
@@ -34,8 +34,8 @@
 | Day 10 | 예약 플로우 (/book, /book/confirm) | ✅ 완료 |
 | Day 11 | 프로필 + 예약 이력 페이지 | ✅ 완료 |
 | Day 12 | 익스텐션 축소 (UI 삭제, 팝업 재디자인) | ✅ 완료 |
-| Day 13 | Content script 자동완성 (KE/JL 우선) | ⏳ 다음 |
-| Day 14 | E2E + Vercel/Railway 배포 + v0.2.0 | ⏸ 대기 |
+| Day 13 | Content script 자동완성 (KE/JL 우선) | ✅ 완료 |
+| Day 14 | E2E + Vercel/Railway 배포 + v0.2.0 | ⏳ 다음 |
 
 범례: ✅ 완료 · 🔄 진행 중 · ⏳ 다음 · ⏸ 대기 · ⚠️ 블록
 
@@ -363,19 +363,26 @@
 - React+Zustand 자체 번들 때문에 100 kB 목표 미달성 — 빌드 자체는 정상
 - `background/index.ts`: price-poll alarm 제거, `GET_PROFILE` 메시지 릴레이만 유지 (Day 13 content script 대비)
 
-## Day 13 — Content script 자동완성 ⏸
+## Day 13 — Content script 자동완성 ✅
 
-- [ ] `extension/src/content/autofill.ts` 골격 + `MutationObserver` 로 input 출현 polling
-- [ ] `extension/src/content/selectors/koreanair.ts`, `jal.ts` — 사이트별 selector map (label/placeholder fuzzy matcher 우선)
-- [ ] `manifest.json` `content_scripts` 등록: `https://*.koreanair.com/*`, `https://*.jal.co.jp/*` (KE/JL 2개 먼저)
-- [ ] `chrome.runtime.sendMessage({type: 'GET_PROFILE'})` → background 가 `chrome.storage.sync` 에서 읽어 응답
-- [ ] 실패/selector 미스매치 시 토스트 "수동 입력" fallback
-- [ ] `extension/src/__tests__/autofill.test.ts` — 두 사이트 fixture 로 자동완성 단위 테스트
+- [x] `extension/src/content/autofill.ts` — `MutationObserver` polling, fuzzy selector 엔진, 토스트
+- [x] `extension/src/content/selectors/koreanair.ts`, `jal.ts` — selector map (name/id/placeholder/label 4단계 매칭)
+- [x] `manifest.json` `content_scripts` 등록: `https://*.koreanair.com/*`, `https://*.jal.co.jp/*`
+- [x] `chrome.runtime.sendMessage({type: 'GET_PROFILE'})` → background 릴레이 응답
+- [x] selector miss 시 토스트 "직접 입력해주세요" fallback
+- [x] `extension/src/__tests__/autofill.test.ts` — 8개 단위 테스트 (KE/JAL fixture)
 
 ### Day 13 완료 기준
-- [ ] 대한항공 예약 페이지에서 탑승자 성/이름/여권/생년월일 자동 입력 확인 (여권번호는 서버 복호화 흐름 필요 — 이 Day 에는 서버 호출 없이 chrome.storage.sync 의 이름/생년월일까지만 우선)
-- [ ] JAL 도 동일
-- [ ] DOM 변경으로 selector miss 시 토스트만 뜨고 페이지는 정상
+- [ ] 대한항공 예약 페이지에서 이름/생년월일 자동 입력 확인 (수동)
+- [ ] JAL 동일 (수동)
+- [x] selector miss 시 토스트만 뜨고 페이지 정상 (코드 구현 완료)
+- [x] vitest 23개 통과
+
+### Day 13 Notes
+- autofill.ts는 별도 청크(2.74 kB gzip 1.43 kB)로 빌드됨 — popup 번들에 영향 없음
+- `manifest.json` v0.2.0, `alarms` 권한 제거 (price-poll 폐기)
+- MutationObserver: 최대 20회 재시도 후 miss 토스트. SPA/동적 렌더링 대응
+- 여권번호 자동입력은 서버 복호화 흐름 필요 — Phase 2.5로 연기
 
 ## Day 14 — E2E + 배포 + v0.2.0 ⏸
 
@@ -428,10 +435,10 @@
 
 ## Next
 
-> **Phase 2 Day 13 — Content script 자동완성 착수.**
+> **Phase 2 Day 14 — E2E + 배포 + v0.2.0.**
 >
 > 착수 지점:
-> 1. `extension/src/content/autofill.ts` 골격 작성 + `MutationObserver` polling
-> 2. `extension/src/content/selectors/koreanair.ts`, `jal.ts` selector map 작성
-> 3. `manifest.json` `content_scripts` 등록 (KE/JL 2개 우선)
-> 4. `chrome.runtime.sendMessage({type: 'GET_PROFILE'})` → background 릴레이 연동
+> 1. 수동 E2E 시나리오: 웹앱 /profile → / → /search → /book → /book/confirm → /bookings → 항공사 content script
+> 2. webapp Vercel preview 배포 (`NEXT_PUBLIC_API_BASE` 설정)
+> 3. backend Railway 배포 (`CORS_ORIGINS` 프로덕션 도메인 추가)
+> 4. 익스텐션 `.env.production` (`VITE_API_BASE=https://api.zivo.app`) + v0.2.0 zip 패키징

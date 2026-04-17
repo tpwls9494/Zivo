@@ -1,0 +1,75 @@
+{
+  "data": [
+    {
+      "id": "off_0000test_cheap",
+      "total_amount": "150000.00",
+      "total_currency": "KRW",
+      "passengers": [
+        {
+          "baggages": []
+        }
+      ],
+      "slices": [
+        {
+          "duration": "PT1H55M",
+          "segments": [
+            {
+              "operating_carrier": {"iata_code": "7C", "name": "Jeju Air"},
+              "origin": {"iata_code": "ICN"},
+              "destination": {"iata_code": "KIX"},
+              "departing_at": "2026-04-26T09:00:00",
+              "arriving_at": "2026-04-26T10:55:00"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "off_0000test_baggage",
+      "total_amount": "180000.00",
+      "total_currency": "KRW",
+      "passengers": [
+        {
+          "baggages": [
+            {"type": "checked", "quantity": 1},
+            {"type": "carry_on", "quantity": 1}
+          ]
+        }
+      ],
+      "slices": [
+        {
+          "duration": "PT2H10M",
+          "segments": [
+            {
+              "operating_carrier": {"iata_code": "OZ", "name": "Asiana Airlines"},
+              "origin": {"iata_code": "ICN"},
+              "destination": {"iata_code": "KIX"},
+              "departing_at": "2026-04-26T13:00:00",
+              "arriving_at": "2026-04-26T15:10:00"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "off_0000test_usd",
+      "total_amount": "120.00",
+      "total_currency": "USD",
+      "passengers": [{"baggages": []}],
+      "slices": [
+        {
+          "duration": "PT2H00M",
+          "segments": [
+            {
+              "operating_carrier": {"iata_code": "MM", "name": "Peach Aviation"},
+              "origin": {"iata_code": "ICN"},
+              "destination": {"iata_code": "KIX"},
+              "departing_at": "2026-04-26T16:00:00",
+              "arriving_at": "2026-04-26T18:00:00"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

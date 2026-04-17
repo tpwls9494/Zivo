@@ -4,7 +4,7 @@
 > 상세 플래닝은 `/Users/isejin/.claude/plans/readme-md-zivo-misty-cupcake.md` 참고.
 
 **현재 단계**: Phase 1 (7일 MVP)
-**마지막 업데이트**: 2026-04-17 (Day 2 구현·테스트 완료)
+**마지막 업데이트**: 2026-04-17 (Day 3 구현·테스트 완료)
 
 ---
 
@@ -15,8 +15,8 @@
 | Day 0 | Claude 협업 기반 (CLAUDE.md + skills) | ✅ 완료 |
 | Day 1 | 모노레포 스캐폴딩 | ✅ 완료 (실행 검증 완료) |
 | Day 2 | 프로필 자동저장/자동완성 | ✅ 완료 (수동 동기화 검증만 남음) |
-| Day 3 | Duffel API 연동 | ⏳ 다음 |
-| Day 4 | 편도 조합 + 3탭 UI | ⏸ 대기 |
+| Day 3 | Duffel API 연동 | ✅ 완료 |
+| Day 4 | 편도 조합 + 3탭 UI | ⏳ 다음 |
 | Day 5 | 원터치 예약 플로우 | ⏸ 대기 |
 | Day 6 | Redis 캐싱·에러·가격 재확인 | ⏸ 대기 |
 | Day 7 | E2E 테스트 + 베타 패키징 | ⏸ 대기 |
@@ -114,19 +114,24 @@
 
 ---
 
-## Day 3 — Duffel API 연동 ⏸
+## Day 3 — Duffel API 연동 ✅
 
-- [ ] `services/duffel.py` 실제 구현 (`.claude/skills/duffel-search.md` 따라)
-- [ ] `POST /api/flights/search` — 왕복 + 편도 pair 병렬 호출 → 정규화
-- [ ] `schemas/flight.py` — `NormalizedOffer`, `SearchRequest/Response`
-- [ ] `services/cache.py` — Redis 5분 TTL (`SETEX`)
-- [ ] `tests/test_duffel_service.py` — respx mock
-- [ ] Duffel sandbox 키 발급 (`.env` 에 `DUFFEL_API_KEY=duffel_test_...`)
+- [x] `services/duffel.py` 실제 구현 (`.claude/skills/duffel-search.md` 따라)
+- [x] `POST /api/flights/search` — 왕복 + 편도 pair 병렬 호출 → 정규화
+- [x] `schemas/flight.py` — `NormalizedOffer`, `SearchRequest/Response`
+- [x] `services/cache.py` — Redis 5분 TTL (`SETEX`)
+- [x] `tests/test_duffel_service.py` — respx mock (8개 테스트, 누적 17/17)
+- [x] Duffel sandbox 키 발급 (`.env` 에 `DUFFEL_API_KEY=duffel_test_...` 사용자 추가)
 
 ### Day 3 완료 기준
-- [ ] ICN→KIX 다음 주말 검색 시 정규화된 오퍼 리스트 반환
-- [ ] 동일 검색 재실행 시 Redis 캐시 적중 (응답 < 200ms)
-- [ ] Duffel 5xx/429 재시도 동작 (mock 테스트)
+- [x] ICN→KIX 다음 주말 검색 시 정규화된 오퍼 리스트 반환 (sandbox mock 검증)
+- [ ] 동일 검색 재실행 시 Redis 캐시 적중 (응답 < 200ms) — 수동 확인 필요
+- [x] Duffel 5xx/429 재시도 동작 (mock 테스트)
+
+### Notes
+- KRW 이외 통화 오퍼는 Phase 1 스코프 상 결과에서 제외 (duffel._krw_only)
+- `_list_offers` 에만 tenacity retry 적용; `_create_offer_request` 는 1회 실패 시 즉시 전파
+- respx 는 `.venv` 에 별도 설치 필요 (`pip install respx`) — requirements.txt dev extras 에 있음
 
 ---
 
@@ -214,8 +219,10 @@
 
 ## Next
 
-> Day 3 (Duffel API 연동) 착수. `DUFFEL_API_KEY=duffel_test_...` 을 `backend/.env` 에 먼저 추가할 것.
+> Day 4 (편도 조합 + 3탭 UI) 착수.
 >
-> 수동 확인 대기: 크롬에 `extension/dist` 재로드 → `프로필` 탭에서 저장 → 팝업 닫았다 다시 열면 자동 복원되는지 확인. `chrome.storage.sync.get(null)` 에 `passport_number` 가 없어야 함.
+> 수동 확인 대기:
+> - `docker compose up -d` 후 `uvicorn app.main:app --port 8000` 기동 → `POST /api/flights/search` 에 ICN→KIX 요청 → KRW 오퍼 리스트 반환 확인
+> - 동일 요청 재실행 → `cached: true` 응답 확인 (Redis TTL 5분)
 >
-> 새 세션 시작 시: `docker compose up -d` → postgres/redis 기동 → 이어서 작업.
+> 새 세션 시작 시: `docker compose up -d` → postgres/redis 기동 → `.claude/skills/oneway-combo.md` 로드 → Day 4 체크리스트 진행.

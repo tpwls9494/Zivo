@@ -4,38 +4,19 @@ on:
     branches: [main]
     paths-ignore: ["CHANGELOG.md"]
 jobs:
-  update-docs:
+  notify-openclaw:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 2
-          token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Install Claude Code
-        run: npm install -g @anthropic-ai/claude-code
-      - name: Update CHANGELOG
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-        run: |
-          DIFF=$(git diff HEAD~1 HEAD --stat | head -20)
-          COMMIT_MSG=$(git log -1 --pretty=%s)
-          DATE=$(date +%Y-%m-%d)
-          claude -p "CHANGELOG.md 파일을 업데이트해줘. 오늘 날짜: $DATE, 커밋 메시지: '$COMMIT_MSG', 변경 파일: $DIFF. 기존 내용 아래에 ## [$DATE] $COMMIT_MSG 형식으로 한국어로 간결하게 추가해줘." --allowedTools "Read,Edit" --dangerously-skip-permissions
-      - name: Commit CHANGELOG
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add CHANGELOG.md
-          git diff --staged --quiet || git commit -m "docs: auto-update changelog [skip ci]"
-          git push
       - name: Notify openclaw
         env:
           OPENCLAW_HOOK_TOKEN: ${{ secrets.OPENCLAW_HOOK_TOKEN }}
         run: |
           COMMIT_MSG=$(git log -1 --pretty=%s)
+          DIFF=$(git diff HEAD~1 HEAD --stat | head -10)
           curl -X POST http://211.188.52.91:18789/hooks/agent \
             -H "Content-Type: application/json" \
             -H "Authorization: Bearer $OPENCLAW_HOOK_TOKEN" \
-            -d "{\"message\": \"[Zivo] 커밋: $COMMIT_MSG - memory/projects/Zivo/progress.md 에 기록하고 텔레그램으로 알려줘.\", \"session\": \"isolated\"}"
+            -d "{\"message\": \"[Zivo] 커밋: $COMMIT_MSG / 변경: $DIFF - update-changelog.sh Zivo \\\"$COMMIT_MSG\\\" \\\"$DIFF\\\" 실행하고 memory/projects/Zivo/progress.md 에 기록한 뒤 텔레그램으로 알려줘.\", \"session\": \"isolated\"}"

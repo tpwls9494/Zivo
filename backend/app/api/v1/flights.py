@@ -1,16 +1,22 @@
 import asyncio
+import logging
 import uuid
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.core.config import settings
 from app.db.session import get_db
 from app.models.booking import Booking
-from app.schemas.booking import BookRequest, BookResponse, BookingDetail
-from app.schemas.flight import SearchRequest, SearchResponse
+from app.schemas.booking import BookingDetail, BookRequest, BookResponse
+from app.schemas.flight import NormalizedOffer, SearchRequest, SearchResponse
 from app.services import cache, duffel
 from app.services.combo import build_combos
 from app.services.user import get_or_create_user
+
+logger = logging.getLogger(__name__)
+
+_PRICE_TOLERANCE = 0.02  # 2%
 
 router = APIRouter()
 
@@ -83,12 +89,39 @@ async def search_flexible() -> dict:
     return {"top": []}
 
 
+async def _revalidate_price(offer: NormalizedOffer) -> None:
+    """Fetch the live price from Duffel and raise 409 if it changed more than 2%."""
+    try:
+        live_krw = await duffel.get_offer_price(offer.offer_id)
+    except Exception as exc:
+        logger.warning("price revalidation failed for %s: %s", offer.offer_id, exc)
+        return
+    if live_krw is None:
+        return
+    delta = abs(live_krw - offer.total_krw) / max(offer.total_krw, 1)
+    if delta > _PRICE_TOLERANCE:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "PRICE_CHANGED",
+                "offer_id": offer.offer_id,
+                "cached_krw": offer.total_krw,
+                "live_krw": live_krw,
+            },
+        )
+
+
 @router.post("/book", response_model=BookResponse)
 async def book_flight(
     body: BookRequest,
     x_device_id: str = Header(...),
     db: AsyncSession = Depends(get_db),
 ) -> BookResponse:
+    if settings.DUFFEL_API_KEY:
+        await _revalidate_price(body.offer)
+        if body.combo_inbound is not None:
+            await _revalidate_price(body.combo_inbound)
+
     user = await get_or_create_user(db, x_device_id)
 
     is_combo = body.combo_inbound is not None

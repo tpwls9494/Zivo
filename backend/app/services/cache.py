@@ -22,6 +22,10 @@ def make_search_key(origin: str, dest: str, depart: str, ret: str | None) -> str
     return f"zivo:search:{digest}"
 
 
+def make_offer_key(offer_id: str) -> str:
+    return f"zivo:offer:{offer_id}"
+
+
 async def get_search_cache(key: str) -> dict[str, Any] | None:
     data = await _get_redis().get(key)
     if data is None:

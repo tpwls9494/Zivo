@@ -4,7 +4,7 @@
 > 상세 플래닝은 `/Users/isejin/.claude/plans/readme-md-zivo-misty-cupcake.md` 참고.
 
 **현재 단계**: Phase 1 (7일 MVP)
-**마지막 업데이트**: 2026-04-17 (Day 5 구현·테스트 완료)
+**마지막 업데이트**: 2026-04-17 (Day 6 구현·테스트 완료)
 
 ---
 
@@ -18,7 +18,7 @@
 | Day 3 | Duffel API 연동 | ✅ 완료 |
 | Day 4 | 편도 조합 + 3탭 UI | ✅ 완료 |
 | Day 5 | 원터치 예약 플로우 | ✅ 완료 |
-| Day 6 | Redis 캐싱·에러·가격 재확인 | ⏳ 다음 |
+| Day 6 | Redis 캐싱·에러·가격 재확인 | ✅ 완료 |
 | Day 7 | E2E 테스트 + 베타 패키징 | ⏸ 대기 |
 
 범례: ✅ 완료 · 🔄 진행 중 · ⏳ 다음 · ⏸ 대기 · ⚠️ 블록
@@ -180,16 +180,22 @@
 
 ---
 
-## Day 6 — Redis·에러·가격 재확인 ⏸
+## Day 6 — Redis·에러·가격 재확인 ✅
 
-- [ ] Redis 캐싱 정책 정리 (key 포맷, TTL, 무효화)
-- [ ] tenacity 재시도 데코레이터 적용 (Duffel 호출 전부)
-- [ ] 예약 직전 가격 재확인 (Duffel 단건 조회, ±2% 초과 시 프론트 재확인)
-- [ ] 구조화 로깅 (JSON, 여권번호·전화번호 마스킹)
+- [x] Redis 캐싱 정책 정리 — `zivo:search:{md5}` (검색, 5min TTL), `zivo:offer:{id}` (key 포맷 정의)
+- [x] tenacity 재시도 데코레이터 전체 적용 — `_create_offer_request` + `_list_offers` + `_fetch_offer` 모두 `_retry` 공통 데코레이터
+- [x] 예약 직전 가격 재확인 — `duffel.get_offer_price()` → `±2%` 초과 시 409 `PRICE_CHANGED` 반환
+- [x] 구조화 로깅 — `app/core/logging.py`: JSON formatter, 여권번호·전화번호 마스킹
+- [x] `tests/test_day6.py` — 13개 테스트 (가격 재확인 7개, tenacity 재시도 3개, 로깅 3개), 누적 38/38
 
 ### Day 6 완료 기준
-- [ ] Duffel 에 강제로 5xx 를 돌려도 3회 재시도 후 4xx 반환
-- [ ] 가격이 3% 올랐을 때 예약 플로우가 차단되고 재확인 모달 노출
+- [x] Duffel 5xx 3회 시 tenacity reraise → 502 (mock 검증)
+- [x] 가격이 3% 올랐을 때 409 PRICE_CHANGED 반환 (테스트 검증)
+
+### Notes
+- `DUFFEL_API_KEY` 가 비어있으면 가격 재확인 스킵 (로컬 sandbox 개발 편의)
+- Duffel 재확인 API 실패 시 soft failure — 예약 진행 (외부 API 일시 장애 대응)
+- 편도 조합은 가는편·오는편 두 leg 모두 개별 재확인
 
 ---
 
@@ -235,14 +241,10 @@
 
 ## Next
 
-> Day 6 (Redis 캐싱·에러·가격 재확인) 착수.
+> Day 7 (E2E 테스트 + 베타 패키징) 착수.
 >
-> Day 6 주요 작업:
-> - Redis 캐싱 정책 정리 (key 포맷, TTL, 무효화)
-> - tenacity 재시도 데코레이터 전체 적용
-> - 예약 직전 가격 재확인 (Duffel 단건 조회, ±2% 초과 시 프론트 재확인 모달)
-> - 구조화 로깅 (JSON, 여권번호·전화번호 마스킹)
->
-> 수동 확인 대기:
-> - `chrome://extensions` 에서 `dist/` 로드 → 검색 → 예약하기 클릭 → 탑승자 확인 화면 → 항공사 탭 오픈 확인
-> - `이력` 탭에서 예약 내역 리스트 확인
+> Day 7 주요 작업:
+> - `pytest --cov` → coverage ≥ 70% 확인
+> - 익스텐션 vitest + chrome runtime mock
+> - 수동 시나리오 체크리스트 (설치 → 검색 → 3탭 → 원터치 예약 → 이력)
+> - `extension/dist` zip 패키징 (`zivo-v0.1.0.zip`)

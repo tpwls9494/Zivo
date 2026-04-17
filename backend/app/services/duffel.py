@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import re
 from datetime import datetime
 
@@ -7,6 +8,8 @@ from tenacity import retry, retry_if_exception, stop_after_attempt, wait_exponen
 
 from app.core.config import settings
 from app.schemas.flight import NormalizedOffer
+
+logger = logging.getLogger(__name__)
 
 DUFFEL_BASE = "https://api.duffel.com"
 
@@ -38,6 +41,15 @@ def _parse_duration_minutes(duration: str) -> int:
     return int(m.group(1) or 0) * 60 + int(m.group(2) or 0)
 
 
+_retry = retry(
+    retry=retry_if_exception(_is_retryable),
+    stop=stop_after_attempt(3),
+    wait=wait_exponential(multiplier=0.5, min=0.5, max=4),
+    reraise=True,
+)
+
+
+@_retry
 async def _create_offer_request(
     client: httpx.AsyncClient,
     origin: str,
@@ -61,12 +73,7 @@ async def _create_offer_request(
     return r.json()["data"]["id"]  # type: ignore[no-any-return]
 
 
-@retry(
-    retry=retry_if_exception(_is_retryable),
-    stop=stop_after_attempt(3),
-    wait=wait_exponential(multiplier=0.5, min=0.5, max=4),
-    reraise=True,
-)
+@_retry
 async def _list_offers(
     client: httpx.AsyncClient, offer_request_id: str, limit: int = 50
 ) -> list[dict]:  # type: ignore[return]
@@ -154,3 +161,21 @@ async def search_oneway_pair(
     outbound = [_normalize_slice(o) for o in outbound_raw]
     inbound = [_normalize_slice(o) for o in inbound_raw]
     return outbound, inbound
+
+
+@_retry
+async def _fetch_offer(client: httpx.AsyncClient, offer_id: str) -> dict | None:
+    r = await client.get(f"{DUFFEL_BASE}/air/offers/{offer_id}", headers=_headers())
+    if r.status_code == 404:
+        return None
+    r.raise_for_status()
+    return r.json()["data"]  # type: ignore[no-any-return]
+
+
+async def get_offer_price(offer_id: str) -> int | None:
+    """Return the live KRW price for a single offer, or None if not found."""
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        data = await _fetch_offer(client, offer_id)
+    if data is None:
+        return None
+    return _to_krw(data["total_amount"], data.get("total_currency", "KRW"))

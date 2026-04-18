@@ -1,6 +1,5 @@
 {
-  "buildCommand": "pnpm -F webapp build",
-  "outputDirectory": "webapp/.next",
-  "installCommand": "pnpm install",
-  "rewrites": []
+  "installCommand": "cd .. && pnpm install",
+  "buildCommand": "pnpm build",
+  "outputDirectory": ".next"
 }

@@ -4,9 +4,10 @@
 > 상세 플래닝:
 > - Phase 1 스캐폴딩: `/Users/isejin/.claude/plans/readme-md-zivo-misty-cupcake.md`
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
+> - Phase 2.5 / Phase 3: `/Users/isejin/.claude/plans/plan-md-14-day-velvety-lark.md`
 
-**현재 단계**: Phase 2 (웹앱 피벗, Day 8-14)
-**마지막 업데이트**: 2026-04-18 (Phase 2 Day 14 완료 — 배포 준비 + v0.2.0)
+**현재 단계**: Phase 2.5 (프로덕션 전환 + 카카오 OAuth, Day 15~)
+**마지막 업데이트**: 2026-04-18 (Phase 2.5/3 플랜 수립 — Day 15-23 로드맵)
 
 ---
 
@@ -36,6 +37,25 @@
 | Day 12 | 익스텐션 축소 (UI 삭제, 팝업 재디자인) | ✅ 완료 |
 | Day 13 | Content script 자동완성 (KE/JL 우선) | ✅ 완료 |
 | Day 14 | E2E + Vercel/Railway 배포 + v0.2.0 | ✅ 완료 |
+
+### Phase 2.5 — 프로덕션 전환 + 카카오 OAuth (Day 15-17)
+
+| Day | 주제 | 상태 |
+|---|---|---|
+| Day 15 | 실배포 (Vercel/Railway) + 미완료 수동 E2E | ⏳ 다음 |
+| Day 16 | 카카오 OAuth 백엔드 (`/api/auth/kakao/*` + JWT 쿠키) | ⏳ 다음 |
+| Day 17 | 카카오 OAuth 웹앱 콜백 + device_id→user_id 병합 | ⏳ 다음 |
+
+### Phase 3 — 커버리지·고도화 (Day 18-23)
+
+| Day | 주제 | 상태 |
+|---|---|---|
+| Day 18 | 가격 알림 백엔드 (`/api/alerts` + APScheduler cron) | ⏳ 다음 |
+| Day 19 | 가격 알림 웹앱 `/alerts` + 달력 탭 실구현 | ⏳ 다음 |
+| Day 20 | Kiwi Tequila 병렬 소스 (`services/kiwi.py`) | ⏳ 다음 |
+| Day 21 | ANA/제주항공 content script selector 확대 | ⏳ 다음 |
+| Day 22 | Chrome Web Store 등록 제출 | ⏳ 다음 |
+| Day 23 | v0.3.0 태그 + CHANGELOG + 회고 | ⏳ 다음 |
 
 범례: ✅ 완료 · 🔄 진행 중 · ⏳ 다음 · ⏸ 대기 · ⚠️ 블록
 
@@ -417,6 +437,167 @@
 
 ---
 
+---
+
+---
+
+# Phase 2.5 — 프로덕션 전환 + 카카오 OAuth (Day 15-17)
+
+**목표**: 코드는 완성된 상태에서 실제 프로덕션 URL 에서 서비스가 동작하게 하고, 익명 device_id 를 카카오 계정으로 격상.
+
+## Day 15 — 실배포 + 미완료 수동 E2E ⏳
+
+### 15a. 실배포 (사용자 계정 필요 — 가이드 제공)
+- [ ] Railway 배포: `backend/` 연결 + PostgreSQL/Redis addon + env vars 주입 → `/health` 200
+- [ ] Vercel 배포: `vercel --prod` + `NEXT_PUBLIC_API_BASE` env → 홈 렌더 확인
+- [ ] 도메인 (선택): `zivo.app`, `api.zivo.app` DNS
+- [ ] 익스텐션 `.env.production` VITE_API_BASE → 실제 Railway URL → 재빌드
+
+### 15b. 미완료 수동 체크리스트 해소
+- [ ] 크롬 `chrome://extensions` → `extension/dist/` 로드 → popup 열림
+- [ ] popup 프로필 저장 → 닫았다 열면 복원 (chrome.storage.sync)
+- [ ] 같은 구글 계정 다른 크롬에서 프로필 동기화 확인
+- [ ] 프로덕션 URL: 검색 → 3탭 → 예약 → /book/confirm → /bookings 전체 흐름
+- [ ] 대한항공(`koreanair.com`) 예약 페이지 자동완성 확인 (수동)
+- [ ] JAL(`jal.co.jp`) 자동완성 확인 (수동)
+- [ ] 동일 검색 재실행 시 Redis 캐시 적중 (응답 < 200ms)
+
+### 완료 기준
+- 프로덕션 URL 에서 예약까지 끊김 없이 진행
+- Day 1-14 체크박스 전부 ✅
+
+---
+
+## Day 16 — 카카오 OAuth 백엔드 ⏳
+
+### 신규
+- [ ] `backend/app/services/kakao.py` — `exchange_code(code) → KakaoUser`, tenacity 재시도
+- [ ] `backend/app/api/v1/auth.py` — `POST /api/auth/kakao/exchange`, `GET /api/auth/me`, `POST /api/auth/logout`
+- [ ] `backend/app/api/deps.py` — `get_current_user_or_device()` 의존성 (JWT 쿠키 우선, X-Device-Id 폴백)
+
+### 수정
+- [ ] `backend/app/core/security.py` — `create_jwt_cookie(user_id)` 헬퍼
+- [ ] `backend/app/services/user.py` — `merge_device_to_user(device_id, user_id)`
+- [ ] `backend/app/api/v1/profile.py`, `bookings.py`, `alerts.py` — 새 의존성으로 교체
+
+### 테스트
+- [ ] `backend/tests/test_auth_api.py` — respx kakao mock (교환·me·로그아웃·병합)
+
+### 완료 기준
+- [ ] `POST /api/auth/kakao/exchange` → httpOnly JWT 쿠키 설정
+- [ ] 기존 device_id 호출 회귀 없음
+- [ ] pytest 누적 55+
+
+---
+
+## Day 17 — 카카오 OAuth 웹앱 + 익스텐션 ⏳
+
+### 웹앱
+- [ ] `webapp/src/app/auth/kakao/callback/route.ts` — code → exchange → 홈 리다이렉트
+- [ ] `webapp/src/components/LoginButton.tsx` — 카카오 OAuth URL 생성
+- [ ] `webapp/src/app/layout.tsx` 상단 nav 로그인 상태 + 버튼
+- [ ] 로그인 직후 device_id → `POST /api/auth/merge-device` 자동 호출
+
+### 익스텐션
+- [ ] `extension/src/popup/App.tsx` — `GET /api/auth/me` 로 로그인 상태 표시, "웹앱에서 로그인" 버튼
+
+### 환경변수
+- `backend/.env` — `KAKAO_CLIENT_ID`, `KAKAO_CLIENT_SECRET`, `KAKAO_REDIRECT_URI`
+- `webapp/.env.production` — `NEXT_PUBLIC_KAKAO_CLIENT_ID`
+
+### 완료 기준
+- [ ] 카카오 로그인 → 웹앱 홈 복귀 → 닉네임 노출
+- [ ] 기존 device_id 프로필/예약이 로그인 후에도 표시 (병합)
+- [ ] 로그아웃 → device_id 기반 복귀
+
+---
+
+# Phase 3 — 커버리지·고도화 (Day 18-23)
+
+**목표**: v0.3.0 — 가격 알림·달력·Kiwi 병렬 소스·ANA/제주항공 자동완성·Chrome Web Store 제출.
+
+## Day 18 — 가격 알림 백엔드 ⏳
+
+- [ ] `backend/app/api/v1/alerts.py` 실구현 — POST/GET/DELETE, `get_current_user_or_device` 의존성
+- [ ] `backend/app/services/alerts.py` — `check_alert()`: Duffel 검색 → target_krw 비교 → 트리거
+- [ ] `backend/app/services/notify_kakao.py` — 알림톡 stub (key 없으면 log only)
+- [ ] `backend/app/services/notify_email.py` — SMTP stub
+- [ ] `backend/app/core/scheduler.py` — APScheduler 6h cron
+- [ ] `backend/app/main.py` — startup/shutdown 스케줄러 등록
+- [ ] `backend/tests/test_alerts.py`
+
+### 완료 기준
+- [ ] `/alerts` CRUD 동작
+- [ ] cron 수동 실행 시 `alert:{id} triggered` 로그 발생
+
+---
+
+## Day 19 — 가격 알림 웹앱 + 달력 탭 ⏳
+
+- [ ] `webapp/src/app/alerts/page.tsx` — 알림 CRUD UI, 로그인 필수
+- [ ] 상단 nav `알림` 탭 추가
+- [ ] `backend/app/api/v1/flights.py` `/search/flexible` 실구현 — 주말 병렬 검색, Redis 1h 캐시
+- [ ] `webapp/src/components/CalendarHeatmap.tsx` — 날짜 히트맵
+- [ ] `/search` 달력 탭 — Top 3 추천 + 히트맵 연결
+
+### 완료 기준
+- [ ] `/alerts` 알림 생성 → DB 반영
+- [ ] `/search` 달력 탭 히트맵 렌더
+
+---
+
+## Day 20 — Kiwi Tequila 병렬 소스 ⏳
+
+- [ ] `backend/app/services/kiwi.py` — `/v2/search` 호출, NormalizedOffer 변환, KRW 필터, _retry 재사용
+- [ ] `backend/app/api/v1/flights.py` — `asyncio.gather(duffel, kiwi)`, 중복 제거 (carrier+flight_no+depart)
+- [ ] `KIWI_API_KEY` 없으면 silent skip (하위 호환)
+- [ ] `backend/tests/test_kiwi_service.py`
+
+### 완료 기준
+- [ ] Kiwi 키 있을 때 LJ/MM 오퍼 포함
+- [ ] Kiwi 키 없을 때 기존 Duffel-only 응답 동일 (회귀 없음)
+
+---
+
+## Day 21 — ANA / 제주항공 content script ⏳
+
+- [ ] `extension/src/content/selectors/ana.ts` (`https://*.ana.co.jp/*`)
+- [ ] `extension/src/content/selectors/jejuair.ts` (`https://*.jejuair.net/*`)
+- [ ] `extension/manifest.json` content_scripts matches 확장
+- [ ] `extension/src/__tests__/autofill.test.ts` — ANA/제주항공 fixture 추가
+
+### 완료 기준
+- [ ] 실사이트 자동완성 확인 (수동)
+- [ ] vitest 31개 통과
+
+---
+
+## Day 22 — Chrome Web Store 제출 ⏳
+
+- [ ] 아이콘 PNG 3종 (16/48/128) 실 디자인 교체 (사용자 제공)
+- [ ] `extension/store-assets/` — 스크린샷 5장, 프로모 이미지
+- [ ] `extension/PRIVACY.md` — 여권번호 AES 암호화/비로컬저장 명시
+- [ ] `extension/manifest.json` version → `0.3.0`
+- [ ] `zivo-v0.3.0.zip` 생성 + Chrome Web Store 심사 제출 ($5 개발자 계정 필요)
+- [ ] README / CHANGELOG 갱신
+
+---
+
+## Day 23 — v0.3.0 패키징 + 회고 ⏳
+
+- [ ] CHANGELOG v0.3.0 작성
+- [ ] v0.3.0 git 태그
+- [ ] `plan.md` Phase 3 섹션 ✅ 업데이트
+- [ ] Phase 4 스코프 재결정 (Amadeus / 보험 연계 / 통계 대시보드)
+
+## Phase 2.5/3 Notes (공용)
+
+- **외부 파트너 선결**: Vercel/Railway 계정 → 카카오 REST 앱 → 카카오 알림톡 파트너 심사 (1-2주) → Kiwi 파트너 심사 → Chrome Web Store 개발자 계정 ($5)
+- **알림톡/Kiwi 미승인 시**: log-only stub 으로 코드 완성, env 주입만으로 실전송/병렬 소스 활성화
+- **v0.4.0 보류**: Amadeus, 편도 조합 보험 연계, 절약액 통계 대시보드, React Native (Phase 4)
+
+---
+
 ## 세션 간 작업 규약
 
 **새 세션 시작 시**:
@@ -444,10 +625,15 @@
 
 ## Next
 
-> **Phase 2 Day 14 — E2E + 배포 + v0.2.0.**
+> **Phase 2.5 Day 15 — 프로덕션 배포 + 미완료 수동 E2E**
 >
-> 착수 지점:
-> 1. 수동 E2E 시나리오: 웹앱 /profile → / → /search → /book → /book/confirm → /bookings → 항공사 content script
-> 2. webapp Vercel preview 배포 (`NEXT_PUBLIC_API_BASE` 설정)
-> 3. backend Railway 배포 (`CORS_ORIGINS` 프로덕션 도메인 추가)
-> 4. 익스텐션 `.env.production` (`VITE_API_BASE=https://api.zivo.app`) + v0.2.0 zip 패키징
+> 선결 과제 (사용자):
+> 1. Vercel / Railway 계정 생성
+> 2. 카카오 디벨로퍼스(`developers.kakao.com`) REST 앱 등록 — OAuth 키 발급
+> 3. (선택) 도메인 `zivo.app` 확보 — Vercel 기본 URL 로도 대체 가능
+>
+> Day 15 착수 지점:
+> 1. Railway backend 연결 + PostgreSQL/Redis addon + env vars 주입 → `/health` 확인
+> 2. Vercel webapp 배포 + `NEXT_PUBLIC_API_BASE` env 설정 → 홈 렌더 확인
+> 3. Day 1-14 수동 체크박스 미완료 항목 일괄 해소 (익스텐션 로드, 프로필 왕복, 대한항공/JAL 자동완성 확인)
+> 4. Day 16: `backend/app/api/v1/auth.py` + `services/kakao.py` 신규 작성

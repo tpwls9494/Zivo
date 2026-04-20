@@ -30,6 +30,9 @@ build/
 # Release artifacts
 *.zip
 
+# 항공사 HTML 분석용 로컬 파일 (세션 토큰 포함 가능)
+항공사_html/
+
 # Editors
 .idea/
 .vscode/

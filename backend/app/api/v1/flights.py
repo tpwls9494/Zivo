@@ -38,22 +38,10 @@ def _deep_link(carrier_iata: str, origin: str, destination: str, departure_date:
             f"https://flyasiana.com/C/KR/KO/booking/flightList"
             f"?tripType=OW&originAirport={origin}&destinationAirport={destination}&departureDate={d}&adultCount={passengers}&childCount=0&infantCount=0"
         ),
-        "7C": (
-            f"https://www.jejuair.net/jejuair/KR/KO/booking/ticket/search.do"
-            f"?tripType=OW&deptCityCode={origin}&arrvCityCode={destination}&deptDt={d}&adultCnt={passengers}"
-        ),
-        "BX": (
-            f"https://www.airbusan.com/f/booking/flight-search"
-            f"?tripType=OW&depAirport={origin}&arrAirport={destination}&depDate={d}&adultCnt={passengers}"
-        ),
-        "LJ": (
-            f"https://www.jinair.com/booking/flight"
-            f"?tripType=OW&depAirportCode={origin}&arrAirportCode={destination}&depDate={departure_date}&adultCnt={passengers}"
-        ),
-        "TW": (
-            f"https://www.twayair.com/app/booking"
-            f"?tripType=OW&origin={origin}&destination={destination}&departDate={d}&adults={passengers}"
-        ),
+        "7C": "https://www.jejuair.net",
+        "BX": "https://www.airbusan.com",
+        "LJ": "https://www.jinair.com",
+        "TW": "https://www.twayair.com",
         "RS": f"https://www.airseoul.com",
         "ZE": f"https://www.eastarjet.com",
         "NH": (

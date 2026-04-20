@@ -27,22 +27,49 @@ _ALLOWED_PAIRS = frozenset(
     | {(jp, kr) for jp in _SUPPORTED_JP for kr in _SUPPORTED_KR}
 )
 
-_CARRIER_BOOKING_URLS: dict[str, str] = {
-    "KE": "https://www.koreanair.com/booking/select-flights",
-    "OZ": "https://flyasiana.com/C/KR/KO/booking/flightList",
-    "7C": "https://www.jejuair.net/jejuair/KR/KO/booking/ticket/reservation.do",
-    "BX": "https://www.airbusan.com/f/booking/flight-search",
-    "LJ": "https://www.jinair.com/booking/flight/domestic",
-    "TW": "https://www.twayair.com/app/booking",
-    "NH": "https://www.ana.co.jp/en/kr/",
-    "JL": "https://www.jal.co.jp/kr/ko/",
-    "MM": "https://www.flypeach.com/kr/ko",
-    "3K": "https://www.jetstar.com/kr/ko",
-}
-
-
-def _deep_link(carrier_iata: str) -> str:
-    return _CARRIER_BOOKING_URLS.get(carrier_iata, "https://www.google.com/flights")
+def _deep_link(carrier_iata: str, origin: str, destination: str, departure_date: str, passengers: int = 1) -> str:
+    d = departure_date.replace("-", "")  # 20260502
+    routes = {
+        "KE": (
+            f"https://www.koreanair.com/booking/select-flights"
+            f"?lang=ko&cabin=Y&adults={passengers}&origin={origin}&destination={destination}&departDate={departure_date}"
+        ),
+        "OZ": (
+            f"https://flyasiana.com/C/KR/KO/booking/flightList"
+            f"?tripType=OW&originAirport={origin}&destinationAirport={destination}&departureDate={d}&adultCount={passengers}&childCount=0&infantCount=0"
+        ),
+        "7C": (
+            f"https://www.jejuair.net/jejuair/KR/KO/booking/ticket/search.do"
+            f"?tripType=OW&deptCityCode={origin}&arrvCityCode={destination}&deptDt={d}&adultCnt={passengers}"
+        ),
+        "BX": (
+            f"https://www.airbusan.com/f/booking/flight-search"
+            f"?tripType=OW&depAirport={origin}&arrAirport={destination}&depDate={d}&adultCnt={passengers}"
+        ),
+        "LJ": (
+            f"https://www.jinair.com/booking/flight"
+            f"?tripType=OW&depAirportCode={origin}&arrAirportCode={destination}&depDate={departure_date}&adultCnt={passengers}"
+        ),
+        "TW": (
+            f"https://www.twayair.com/app/booking"
+            f"?tripType=OW&origin={origin}&destination={destination}&departDate={d}&adults={passengers}"
+        ),
+        "RS": f"https://www.airseoul.com",
+        "ZE": f"https://www.eastarjet.com",
+        "NH": (
+            f"https://www.ana.co.jp/en/kr/book-plan/flight/search/"
+            f"?type=OW&dep={origin}&arr={destination}&dat={departure_date}&adt={passengers}"
+        ),
+        "JL": (
+            f"https://www.jal.co.jp/kr/ko/booking/"
+            f"?type=OW&from={origin}&to={destination}&date={departure_date}&adult={passengers}"
+        ),
+        "MM": f"https://www.flypeach.com/kr/ko",
+        "GK": f"https://www.jetstar.com/kr/ko/flights",
+        "IJ": f"https://www.springjapan.com/kr",
+        "NQ": f"https://www.airjapan.com",
+    }
+    return routes.get(carrier_iata, f"https://www.google.com/flights?q={origin}+{destination}+{departure_date}")
 
 
 @router.post("/search", response_model=SearchResponse)
@@ -149,7 +176,12 @@ async def book_flight(
         BookingDetail(
             booking_id=outbound_id,
             direction=direction,
-            deep_link_url=_deep_link(body.offer.carrier_iata),
+            deep_link_url=_deep_link(
+                body.offer.carrier_iata,
+                body.offer.departure_iata,
+                body.offer.arrival_iata,
+                body.offer.departure_at.strftime("%Y-%m-%d"),
+            ),
             combo_group_id=combo_group_id,
         )
     ]
@@ -175,7 +207,12 @@ async def book_flight(
             BookingDetail(
                 booking_id=inbound_id,
                 direction="inbound",
-                deep_link_url=_deep_link(body.combo_inbound.carrier_iata),
+                deep_link_url=_deep_link(
+                    body.combo_inbound.carrier_iata,
+                    body.combo_inbound.departure_iata,
+                    body.combo_inbound.arrival_iata,
+                    body.combo_inbound.departure_at.strftime("%Y-%m-%d"),
+                ),
                 combo_group_id=combo_group_id,
             )
         )

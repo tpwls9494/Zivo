@@ -20,12 +20,18 @@
   ],
   "content_scripts": [
     {
-      "matches": ["https://*.koreanair.com/*"],
-      "js": ["src/content/autofill.ts"],
-      "run_at": "document_idle"
-    },
-    {
-      "matches": ["https://*.jal.co.jp/*"],
+      "matches": [
+        "https://*.koreanair.com/*",
+        "https://*.flyasiana.com/*",
+        "https://*.jal.co.jp/*",
+        "https://*.ana.co.jp/*",
+        "https://*.jejuair.net/*",
+        "https://*.jinair.com/*",
+        "https://*.airbusan.com/*",
+        "https://*.twayair.com/*",
+        "https://*.flypeach.com/*",
+        "https://*.jetstar.com/*"
+      ],
       "js": ["src/content/autofill.ts"],
       "run_at": "document_idle"
     }

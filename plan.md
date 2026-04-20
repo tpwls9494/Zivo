@@ -625,15 +625,30 @@
 
 ## Next
 
-> **Phase 2.5 Day 15 — 프로덕션 배포 + 미완료 수동 E2E**
+> **다음 세션 — 항공사 자동완성 + 웹앱 디자인 개선**
 >
-> 선결 과제 (사용자):
-> 1. Vercel / Railway 계정 생성
-> 2. 카카오 디벨로퍼스(`developers.kakao.com`) REST 앱 등록 — OAuth 키 발급
-> 3. (선택) 도메인 `zivo.app` 확보 — Vercel 기본 URL 로도 대체 가능
+> ### 1. 나머지 항공사 HTML 분석 + 셀렉터 완성
+> 대한항공 완료 (2026-04-20). 나머지 9개 항공사 진행:
+> - [ ] 아시아나 (`항공사_html/` 에 HTML 저장 → `selectors/asiana.ts` 업데이트)
+> - [ ] JAL (`selectors/jal.ts` 업데이트)
+> - [ ] ANA (`selectors/ana.ts`)
+> - [ ] 제주항공 (`selectors/jejuair.ts`)
+> - [ ] 진에어 (`selectors/jinair.ts`)
+> - [ ] 에어부산 (`selectors/airbusan.ts`)
+> - [ ] 티웨이 (`selectors/tway.ts`)
+> - [ ] 피치항공 (`selectors/peach.ts`)
+> - [ ] 제트스타 (`selectors/jetstar.ts`)
 >
-> Day 15 착수 지점:
-> 1. Railway backend 연결 + PostgreSQL/Redis addon + env vars 주입 → `/health` 확인
-> 2. Vercel webapp 배포 + `NEXT_PUBLIC_API_BASE` env 설정 → 홈 렌더 확인
-> 3. Day 1-14 수동 체크박스 미완료 항목 일괄 해소 (익스텐션 로드, 프로필 왕복, 대한항공/JAL 자동완성 확인)
-> 4. Day 16: `backend/app/api/v1/auth.py` + `services/kakao.py` 신규 작성
+> 작업 방식: 각 항공사 예약 페이지(비로그인 게스트) → 탑승자 정보 폼 → HTML 저장 → Claude가 셀렉터 분석
+>
+> ### 2. 웹앱 디자인 개선 (Claude Design 활용)
+> - [ ] 홈 검색 폼 UI 개선
+> - [ ] 검색 결과 카드 디자인
+> - [ ] 예약 플로우 UI 개선
+> - [ ] 전체 컬러/타이포그래피 통일
+>
+> ### 3. 익스텐션 device_id → 웹앱 URL 파라미터 임시 동기화 (카카오 OAuth 전 패치)
+> `extension/src/popup/App.tsx` 웹앱 열기 버튼에 device_id URL 파라미터 추가
+>
+> ### 4. Day 16 카카오 OAuth (이후)
+> `backend/app/api/v1/auth.py` + `services/kakao.py` 신규 작성

@@ -7,4 +7,5 @@ export interface FieldSelector {
   elementType?: "input" | "select" | "button";
   buttonText?: string;    // button/label text to click (gender toggle)
   cssSelector?: string;   // arbitrary CSS selector as last resort
+  value?: string;         // fixed value override (e.g. "male"/"female" for gender selects)
 }

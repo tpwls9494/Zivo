@@ -90,12 +90,21 @@ function fillInput(input: HTMLInputElement, value: string) {
 }
 
 function fillSelect(select: HTMLSelectElement, value: string) {
+  const stripped = String(parseInt(value, 10)); // "03" → "3"
+  const setOption = (val: string) => {
+    const nativeSetter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set;
+    nativeSetter?.call(select, val);
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  };
+  // 1) exact value match (handles zero-padded "03" and plain "3")
   for (const option of select.options) {
-    if (option.value === value || option.text.replace(/\s/g, "").includes(value)) {
-      const nativeSetter = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value")?.set;
-      nativeSetter?.call(select, option.value);
-      select.dispatchEvent(new Event("change", { bubbles: true }));
-      return;
+    if (option.value === value || option.value === stripped) { setOption(option.value); return; }
+  }
+  // 2) text fuzzy match
+  for (const option of select.options) {
+    const text = option.text.replace(/\s/g, "");
+    if (text.includes(value) || new RegExp(`^${stripped}[^0-9]|^${stripped}$`).test(text)) {
+      setOption(option.value); return;
     }
   }
 }
@@ -103,9 +112,10 @@ function fillSelect(select: HTMLSelectElement, value: string) {
 function fillField(sel: FieldSelector, value: string): boolean {
   const el = findElement(sel);
   if (!el) return false;
+  const actualValue = sel.value ?? value; // value 오버라이드 (gender: "M"→"male")
 
   if (sel.elementType === "select" || el.tagName === "SELECT") {
-    fillSelect(el as HTMLSelectElement, value);
+    fillSelect(el as HTMLSelectElement, actualValue);
     return true;
   }
   if (sel.elementType === "button") {
@@ -119,7 +129,7 @@ function fillField(sel: FieldSelector, value: string): boolean {
       input.checked = true;
       input.dispatchEvent(new Event("change", { bubbles: true }));
     } else {
-      fillInput(input, value);
+      fillInput(input, actualValue);
     }
     return true;
   }
@@ -157,8 +167,8 @@ function applyProfile(profile: ProfileCache, selectors: SelectorMap): number {
     { key: "phone",        value: profile.phone },
     { key: "birth_date",   value: profile.birth_date },
     { key: "birth_year",   value: year },
-    { key: "birth_month",  value: month ? String(parseInt(month, 10)) : undefined },
-    { key: "birth_day",    value: day   ? String(parseInt(day, 10))   : undefined },
+    { key: "birth_month",  value: month },
+    { key: "birth_day",    value: day },
   ];
 
   for (const { key, value } of fieldMap) {

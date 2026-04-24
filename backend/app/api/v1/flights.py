@@ -128,8 +128,8 @@ async def search_flexible(req: FlexibleSearchRequest) -> FlexibleSearchResponse:
         raise HTTPException(status_code=422, detail="to_date must be after from_date")
 
     days = (req.to_date - req.from_date).days + 1
-    if days > 30:
-        raise HTTPException(status_code=422, detail="Range must be 30 days or less")
+    if days > 31:
+        raise HTTPException(status_code=422, detail="Range must be 31 days or less")
 
     today = date.today()
     all_dates = [req.from_date + timedelta(days=i) for i in range(days)]
@@ -153,8 +153,8 @@ async def search_flexible(req: FlexibleSearchRequest) -> FlexibleSearchResponse:
             await _get_redis().expire(key, _FLEXIBLE_CACHE_TTL)
         return dp
 
-    # 8개씩 병렬 처리
-    sem = asyncio.Semaphore(8)
+    # Rate limit 배려: 3개씩 순차 병렬 처리
+    sem = asyncio.Semaphore(3)
 
     async def _guarded(d: date) -> DayPrice:
         async with sem:

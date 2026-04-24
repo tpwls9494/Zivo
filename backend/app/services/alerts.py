@@ -17,21 +17,21 @@ logger = logging.getLogger(__name__)
 
 async def check_alert(db: AsyncSession, alert: PriceAlert) -> bool:
     """단일 알림 체크 — 현재가 ≤ target_krw 이면 알림 발송 후 True 반환."""
-    from app.services.duffel import search_offers  # 순환 방지 local import
+    from app.services.duffel import search_roundtrip, search_oneway  # 순환 방지 local import
 
     try:
-        offers = await search_offers(
-            origin=alert.origin,
-            destination=alert.destination,
-            departure_date=alert.depart_date.isoformat(),
-            return_date=alert.return_date.isoformat() if alert.return_date else None,
-            passengers=1,
-            cabin_class="economy",
-        )
+        depart = alert.depart_date.isoformat()
+        ret = alert.return_date.isoformat() if alert.return_date else None
+
+        if ret:
+            offers = await search_roundtrip(alert.origin, alert.destination, depart, ret)
+        else:
+            offers = await search_oneway(alert.origin, alert.destination, depart)
+
         if not offers:
             return False
 
-        min_price = min(o["total_amount_krw"] for o in offers)
+        min_price = min(o.total_krw for o in offers)
         alert.last_checked_at = datetime.now(UTC)
 
         if min_price <= alert.target_krw:

@@ -30,36 +30,61 @@ _ALLOWED_PAIRS = frozenset(
 )
 
 def _deep_link(carrier_iata: str, origin: str, destination: str, departure_date: str, passengers: int = 1) -> str:
-    d = departure_date.replace("-", "")  # 20260502
+    d = departure_date.replace("-", "")  # "2026-06-07" → "20260607"
     routes = {
+        # ── 대형 항공사 ───────────────────────────────────────────────
         "KE": (
             f"https://www.koreanair.com/booking/select-flights"
             f"?lang=ko&cabin=Y&adults={passengers}&origin={origin}&destination={destination}&departDate={departure_date}"
         ),
         "OZ": (
             f"https://flyasiana.com/C/KR/KO/booking/flightList"
-            f"?tripType=OW&originAirport={origin}&destinationAirport={destination}&departureDate={d}&adultCount={passengers}&childCount=0&infantCount=0"
-        ),
-        "7C": "https://www.jejuair.net",
-        "BX": "https://www.airbusan.com",
-        "LJ": "https://www.jinair.com",
-        "TW": "https://www.twayair.com",
-        "RS": f"https://www.airseoul.com",
-        "ZE": f"https://www.eastarjet.com",
-        "NH": (
-            f"https://www.ana.co.jp/en/kr/book-plan/flight/search/"
-            f"?type=OW&dep={origin}&arr={destination}&dat={departure_date}&adt={passengers}"
+            f"?tripType=OW&originAirport={origin}&destinationAirport={destination}"
+            f"&departureDate={d}&adultCount={passengers}&childCount=0&infantCount=0"
         ),
         "JL": (
-            f"https://www.jal.co.jp/kr/ko/booking/"
-            f"?type=OW&from={origin}&to={destination}&date={departure_date}&adult={passengers}"
+            f"https://www.jal.co.jp/inter/search/"
+            f"?lang=kr&type=ow&dep={origin}&arr={destination}&date={departure_date}&adult={passengers}"
         ),
-        "MM": f"https://www.flypeach.com/kr/ko",
-        "GK": f"https://www.jetstar.com/kr/ko/flights",
+        "NH": (
+            f"https://www.ana.co.jp/en/kr/book-plan/flight/search/"
+            f"?tripType=OW&dep={origin}&arr={destination}&departure={departure_date}&adult={passengers}"
+        ),
+        # ── 한국 LCC ─────────────────────────────────────────────────
+        "7C": (
+            f"https://www.jejuair.net/kr/ko/booking/search"
+            f"?depAirportCode={origin}&arrAirportCode={destination}&depDate={d}&adtCnt={passengers}&tripType=OW"
+        ),
+        "LJ": (
+            f"https://www.jinair.com/booking/availability"
+            f"?depPort={origin}&arrPort={destination}&depDate={d}&paxAdult={passengers}&tripType=OW"
+        ),
+        "TW": (
+            f"https://www.twayair.com/app/booking/availability"
+            f"?dep={origin}&arr={destination}&depDate={d}&adult={passengers}&tripType=OW"
+        ),
+        "BX": (
+            f"https://www.airbusan.com/part/booking/main"
+            f"?depAirport={origin}&arrAirport={destination}&depDate={d}&adultCount={passengers}&tripType=OW"
+        ),
+        "RS": f"https://www.airseoul.com",
+        "ZE": f"https://www.eastarjet.com",
+        # ── 일본 LCC ─────────────────────────────────────────────────
+        "MM": (
+            f"https://booking.flypeach.com/kr"
+            f"?origin={origin}&destination={destination}&departure={departure_date}&adults={passengers}&tripType=OW"
+        ),
+        "GK": (
+            f"https://www.jetstar.com/kr/ko/flights"
+            f"?from={origin}&to={destination}&date={departure_date}&adults={passengers}"
+        ),
         "IJ": f"https://www.springjapan.com/kr",
         "NQ": f"https://www.airjapan.com",
     }
-    return routes.get(carrier_iata, f"https://www.google.com/flights?q={origin}+{destination}+{departure_date}")
+    return routes.get(
+        carrier_iata,
+        f"https://www.google.com/flights?q={origin}+{destination}+{departure_date}"
+    )
 
 
 @router.post("/search", response_model=SearchResponse)

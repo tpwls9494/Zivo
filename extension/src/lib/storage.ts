@@ -31,10 +31,32 @@ export async function saveDefaults(patch: Partial<StoredDefaults>): Promise<void
   await chrome.storage.sync.set({ [KEY]: { ...current, ...patch } });
 }
 
+// 웹앱(vercel/localhost)이 저장한 쿠키에서 device ID를 읽어 동기화.
+// 동일 ID를 쓰면 웹앱에서 저장한 프로필을 익스텐션이 그대로 사용.
+async function _readWebappDeviceId(): Promise<string | null> {
+  const COOKIE_NAME = "zivo-device-id";
+  const urls = [
+    "https://zivo-extension.vercel.app",
+    "http://localhost:3000",
+  ];
+  for (const url of urls) {
+    try {
+      const cookie = await chrome.cookies.get({ url, name: COOKIE_NAME });
+      if (cookie?.value) return cookie.value;
+    } catch {
+      // cookies API 미지원 환경(테스트 등) 무시
+    }
+  }
+  return null;
+}
+
 export async function getOrCreateDeviceId(): Promise<string> {
   const current = (await loadDefaults()) ?? {};
   if (current.deviceId) return current.deviceId;
-  const id = crypto.randomUUID();
+
+  // 웹앱 쿠키와 동기화 시도
+  const webappId = await _readWebappDeviceId();
+  const id = webappId ?? crypto.randomUUID();
   await saveDefaults({ deviceId: id });
   return id;
 }

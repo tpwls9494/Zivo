@@ -12,11 +12,13 @@
     "service_worker": "src/background/index.ts",
     "type": "module"
   },
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "cookies"],
   "host_permissions": [
     "http://localhost:8000/*",
     "https://api.zivo.app/*",
-    "https://zivo-production.up.railway.app/*"
+    "https://zivo-production.up.railway.app/*",
+    "http://localhost:3000/*",
+    "https://zivo-extension.vercel.app/*"
   ],
   "content_scripts": [
     {

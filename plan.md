@@ -7,7 +7,7 @@
 > - Phase 2.5 / Phase 3: `/Users/isejin/.claude/plans/plan-md-14-day-velvety-lark.md`
 
 **현재 단계**: Phase 3 (커버리지·고도화, Day 21~)
-**마지막 업데이트**: 2026-04-25 (Day 18-19 완료 — 가격 알림 CRUD + 달력 히트맵, Day 20 보류)
+**마지막 업데이트**: 2026-04-25 (Day 21 완료 — 항공사 content script 개선, vitest 31개)
 
 ---
 
@@ -53,7 +53,7 @@
 | Day 18 | 가격 알림 백엔드 (`/api/alerts` + APScheduler cron) | ✅ 완료 |
 | Day 19 | 가격 알림 웹앱 `/alerts` + 달력 탭 실구현 | ✅ 완료 |
 | Day 20 | Kiwi Tequila 병렬 소스 (`services/kiwi.py`) | ⏸ 보류 (API 신규 불가, 유저 확보 후 재신청) |
-| Day 21 | 항공사 content script selector 실DOM 기반 확대 | ⏳ 다음 |
+| Day 21 | 항공사 content script selector 실DOM 기반 확대 | ✅ 완료 |
 | Day 22 | Chrome Web Store 등록 제출 | ⏳ 다음 |
 | Day 23 | v0.3.0 태그 + CHANGELOG + 회고 | ⏳ 다음 |
 
@@ -560,16 +560,23 @@
 
 ---
 
-## Day 21 — ANA / 제주항공 content script ⏳
+## Day 21 — ANA / 제주항공 content script ✅
 
-- [ ] `extension/src/content/selectors/ana.ts` (`https://*.ana.co.jp/*`)
-- [ ] `extension/src/content/selectors/jejuair.ts` (`https://*.jejuair.net/*`)
-- [ ] `extension/manifest.json` content_scripts matches 확장
-- [ ] `extension/src/__tests__/autofill.test.ts` — ANA/제주항공 fixture 추가
+- [x] `extension/src/content/selectors/ana.ts` — 폴백 cssSelector 패턴 강화
+- [x] `extension/src/content/selectors/jejuair.ts` — React SPA id suffix 패턴 대응
+- [x] `extension/manifest.json` content_scripts matches — 10개 항공사 이미 등록 완료
+- [x] `extension/src/__tests__/autofill.test.ts` — ANA/Jeju Air fixture + 8개 테스트 추가
+- [x] `autofill.ts` 엔진 개선 — 영문 월 이름 매핑 (March→3) + SPA 타임아웃 폴백
 
 ### 완료 기준
 - [ ] 실사이트 자동완성 확인 (수동)
-- [ ] vitest 31개 통과
+- [x] vitest 31개 통과
+
+### Day 21 Notes
+- autofill.ts: MONTH_NAMES 상수 추가 → fillSelect에서 "March" 같은 텍스트 옵션 처리
+- autofill.ts: run()에 setTimeout 폴백 3단계(500/1500/4000ms) + 8s 최종 timeout 추가 — SPA 늦은 렌더링 대응
+- 테스트: findElement 헬퍼 추가 (select 요소 포함), ANA English form fixture, Jeju Air Korean label fixture
+- 실DOM 검증은 수동 필요 (대한항공 KE만 실DOM 검증 완료 상태)
 
 ---
 
@@ -626,26 +633,21 @@
 
 ## Next
 
-> **다음 세션 — Day 21: 항공사 셀렉터 실DOM 검증 → Day 22-23: v0.3.0 릴리즈**
->
-> ### Day 21 — 항공사 content script selector 실DOM 기반 확대
-> 베스트에포트 셀렉터 9개 작성 완료 (2026-04-25). 실제 테스트 후 수정 필요:
-> - 각 항공사 예약 폼에서 크롬 익스텐션 자동완성 테스트
-> - 안 되는 항공사: 해당 예약 페이지 HTML 저장 → `항공사_html/` → 셀렉터 수정
-> - 참고: 대한항공(KE) 셀렉터만 실DOM 검증 완료
+> **다음 세션 — Day 22: Chrome Web Store 제출 → Day 23: v0.3.0 릴리즈**
 >
 > ### Day 22 — Chrome Web Store 등록 제출
 > - 아이콘 PNG 3종 (16/48/128) 실 디자인 (사용자 제공 필요)
-> - 스크린샷 5장, 프로모 이미지
-> - `extension/PRIVACY.md` 작성
-> - `zivo-v0.3.0.zip` 생성 + 제출 ($5 개발자 계정 필요)
+> - `extension/store-assets/` — 스크린샷 5장, 프로모 이미지
+> - `extension/PRIVACY.md` 작성 (여권번호 AES 암호화/비로컬저장 명시)
+> - `extension/manifest.json` version → `0.3.0`
+> - `zivo-v0.3.0.zip` 생성 + Chrome Web Store 심사 제출 ($5 개발자 계정 필요)
 >
 > ### Day 23 — v0.3.0 패키징 + 회고
 > - CHANGELOG v0.3.0 작성
 > - v0.3.0 git 태그
 > - plan.md Phase 3 완료 업데이트
+> - Phase 4 스코프 재결정
 >
-> ### 수정 필요 항목 (다음 세션에서 처리)
-> - Claude Design 디자인 시스템 추가 페이지 적용 (alerts, bookings 등)
-> - 달력 히트맵 성능 개선 (현재 첫 로드 느림, Redis 캐시 이후는 빠름)
-> - 항공사 셀렉터 실DOM 검증 (현재 베스트에포트 수준)
+> ### 보류/수동 확인 항목
+> - 항공사별 실DOM 검증 (KE 외 나머지 9개 — 수동 테스트 필요)
+> - 달력 히트맵 성능 개선 (첫 로드 느림, Redis 캐시 이후는 빠름)

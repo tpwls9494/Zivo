@@ -89,6 +89,14 @@ function fillInput(input: HTMLInputElement, value: string) {
   input.dispatchEvent(new Event("change", { bubbles: true }));
 }
 
+// English month name → numeric string (for select options like "March", "Jan")
+const MONTH_NAMES: Record<string, string> = {
+  january: "1", february: "2", march: "3", april: "4", may: "5", june: "6",
+  july: "7", august: "8", september: "9", october: "10", november: "11", december: "12",
+  jan: "1", feb: "2", mar: "3", apr: "4", jun: "6", jul: "7",
+  aug: "8", sep: "9", oct: "10", nov: "11", dec: "12",
+};
+
 function fillSelect(select: HTMLSelectElement, value: string) {
   const stripped = String(parseInt(value, 10)); // "03" → "3"
   const setOption = (val: string) => {
@@ -104,6 +112,13 @@ function fillSelect(select: HTMLSelectElement, value: string) {
   for (const option of select.options) {
     const text = option.text.replace(/\s/g, "");
     if (text.includes(value) || new RegExp(`^${stripped}[^0-9]|^${stripped}$`).test(text)) {
+      setOption(option.value); return;
+    }
+  }
+  // 3) English month name match (e.g., "March" → "3")
+  for (const option of select.options) {
+    const monthNum = MONTH_NAMES[option.text.trim().toLowerCase()];
+    if (monthNum && (monthNum === stripped || monthNum === value)) {
       setOption(option.value); return;
     }
   }
@@ -196,22 +211,40 @@ async function run() {
   }
 
   let filled = applyProfile(profile, selectors);
-
-  if (filled === 0) {
-    let attempts = 0;
-    const observer = new MutationObserver(() => {
-      attempts++;
-      filled = applyProfile(profile, selectors);
-      if (filled > 0 || attempts > 20) {
-        observer.disconnect();
-        if (filled > 0) showToast(`Zivo: ${filled}개 항목을 자동 입력했습니다.`);
-        else showToast("Zivo: 입력 필드를 찾지 못했습니다. 직접 입력해주세요.");
-      }
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  } else {
+  if (filled > 0) {
     showToast(`Zivo: ${filled}개 항목을 자동 입력했습니다.`);
+    return;
   }
+
+  // Form not yet rendered (SPA) — retry via MutationObserver + timeout fallbacks
+  let settled = false;
+  let mutationCount = 0;
+
+  const resolve = (success: boolean) => {
+    if (settled) return;
+    settled = true;
+    observer.disconnect();
+    if (success) showToast(`Zivo: ${filled}개 항목을 자동 입력했습니다.`);
+    else showToast("Zivo: 입력 필드를 찾지 못했습니다. 직접 입력해주세요.");
+  };
+
+  const observer = new MutationObserver(() => {
+    mutationCount++;
+    filled = applyProfile(profile, selectors);
+    if (filled > 0) { resolve(true); return; }
+    if (mutationCount >= 20) resolve(false);
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Additional retries for SPAs that finish rendering without triggering mutations
+  for (const delay of [500, 1500, 4000]) {
+    setTimeout(() => {
+      if (settled) return;
+      filled = applyProfile(profile, selectors);
+      if (filled > 0) resolve(true);
+    }, delay);
+  }
+  setTimeout(() => resolve(false), 8000);
 }
 
 void run();

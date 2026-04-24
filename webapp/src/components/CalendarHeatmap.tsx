@@ -49,8 +49,10 @@ export default function CalendarHeatmap({ origin, destination }: Props) {
     enabled: !!(origin && destination),
   });
 
-  const priceMap = new Map(data?.prices.map(p => [p.date, p.min_krw]) ?? []);
-  const validPrices = (data?.prices ?? []).map(p => p.min_krw).filter((p): p is number => p !== null);
+  const prices = data?.prices ?? [];
+  const top3 = data?.top3 ?? [];
+  const priceMap = new Map(prices.map(p => [p.date, p.min_krw]));
+  const validPrices = prices.map(p => p.min_krw).filter((p): p is number => p !== null);
   const minPrice = validPrices.length ? Math.min(...validPrices) : 0;
   const maxPrice = validPrices.length ? Math.max(...validPrices) : 0;
 
@@ -86,11 +88,11 @@ export default function CalendarHeatmap({ origin, destination }: Props) {
       )}
 
       {/* Top 3 */}
-      {data?.top3 && data.top3.length > 0 && (
+      {top3.length > 0 && (
         <div className="bg-success-light rounded-xl p-3">
           <p className="text-xs font-semibold text-success-text mb-2">이달의 최저가 TOP 3</p>
           <div className="flex gap-2 flex-wrap">
-            {data.top3.map(p => (
+            {top3.map(p => (
               <span key={p.date} className="bg-white rounded-lg px-2 py-1 text-xs font-medium text-fg-1 border border-border">
                 {p.date.slice(5)} — {p.min_krw?.toLocaleString()}원
               </span>

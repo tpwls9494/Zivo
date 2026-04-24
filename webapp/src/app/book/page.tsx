@@ -3,7 +3,7 @@
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useState, useEffect, Suspense } from "react";
-import type { NormalizedOffer, ProfileResponse } from "@zivo/types";
+import type { NormalizedOffer, PassengerItem, ProfileResponse } from "@zivo/types";
 import { api } from "@/lib/api";
 import { Button, Banner, CardForm, FullPageSpinner, Input, Select } from "@/components/ui";
 
@@ -20,11 +20,17 @@ function BookForm() {
     queryFn: api.getProfile,
   });
 
+  const { data: passengers } = useQuery({
+    queryKey: ["passengers"],
+    queryFn: api.listPassengers,
+  });
+
   const profile =
     profileData && "passport_given_name" in profileData
       ? (profileData as ProfileResponse)
       : null;
 
+  const [selectedPassengerId, setSelectedPassengerId] = useState<string>("__profile__");
   const [givenName, setGivenName] = useState("");
   const [familyName, setFamilyName] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -36,16 +42,45 @@ function BookForm() {
   const [offer, setOffer] = useState<NormalizedOffer | null>(null);
   const [comboInbound, setComboInbound] = useState<NormalizedOffer | null>(null);
 
+  // 탑승자 목록 로드 시 기본값 설정
   useEffect(() => {
-    if (profile) {
-      setGivenName(profile.passport_given_name ?? "");
-      setFamilyName(profile.passport_family_name ?? "");
-      setBirthDate(profile.birth_date ?? "");
-      setGender(profile.gender ?? "M");
-      setPhone(profile.phone ?? "");
-      setNationality(profile.nationality ?? "KR");
+    if (passengers && passengers.length > 0) {
+      const primary = passengers.find((p) => p.is_primary) ?? passengers[0];
+      setSelectedPassengerId(primary.id);
+      fillFromPassenger(primary);
+    } else if (profile) {
+      fillFromProfile(profile);
     }
-  }, [profile]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [passengers, profile]);
+
+  function fillFromPassenger(p: PassengerItem) {
+    setGivenName(p.passport_given_name);
+    setFamilyName(p.passport_family_name);
+    setBirthDate(p.birth_date);
+    setGender(p.gender);
+    setPhone(p.phone);
+    setNationality(p.nationality === "KOR" ? "KR" : p.nationality);
+  }
+
+  function fillFromProfile(p: ProfileResponse) {
+    setGivenName(p.passport_given_name ?? "");
+    setFamilyName(p.passport_family_name ?? "");
+    setBirthDate(p.birth_date ?? "");
+    setGender(p.gender ?? "M");
+    setPhone(p.phone ?? "");
+    setNationality(p.nationality ?? "KR");
+  }
+
+  function handlePassengerSelect(id: string) {
+    setSelectedPassengerId(id);
+    if (id === "__profile__") {
+      if (profile) fillFromProfile(profile);
+    } else {
+      const p = passengers?.find((x) => x.id === id);
+      if (p) fillFromPassenger(p);
+    }
+  }
 
   useEffect(() => {
     const stored = sessionStorage.getItem("zivo_book_offers");
@@ -183,6 +218,27 @@ function BookForm() {
         <form onSubmit={handleSubmit}>
           <CardForm>
             <h2 className="font-semibold text-fg-1">탑승자 정보</h2>
+
+            {/* 탑승자 선택기 */}
+            {passengers && passengers.length > 0 && (
+              <div className="flex gap-2 flex-wrap">
+                {passengers.map((p) => (
+                  <button
+                    key={p.id}
+                    type="button"
+                    onClick={() => handlePassengerSelect(p.id)}
+                    className={`px-3 py-1.5 rounded-full text-sm border transition-colors ${
+                      selectedPassengerId === p.id
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white text-fg-3 border-border hover:border-blue-400"
+                    }`}
+                  >
+                    {p.nickname}
+                    {p.is_primary && " ★"}
+                  </button>
+                ))}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-3">
               <Input

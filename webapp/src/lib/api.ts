@@ -6,6 +6,8 @@ import type {
   BookRequest,
   BookResponse,
   BookingsListResponse,
+  PassengerItem,
+  PassengerPayload,
 } from "@zivo/types";
 import { getOrCreateDeviceId } from "./deviceId";
 
@@ -56,4 +58,11 @@ export const api = {
   listBookings: () => request<BookingsListResponse>("/api/bookings"),
   getMe: () => request<{ user_id: string; nickname: string | null; email: string | null; is_kakao_user: boolean }>("/api/auth/me"),
   logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
+  listPassengers: () => request<PassengerItem[]>("/api/passengers"),
+  createPassenger: (body: PassengerPayload) =>
+    request<PassengerItem>("/api/passengers", { method: "POST", body: JSON.stringify(body) }),
+  updatePassenger: (id: string, body: PassengerPayload) =>
+    request<PassengerItem>(`/api/passengers/${id}`, { method: "PUT", body: JSON.stringify(body) }),
+  deletePassenger: (id: string) =>
+    request<void>(`/api/passengers/${id}`, { method: "DELETE" }),
 };

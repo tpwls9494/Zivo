@@ -1,177 +1,193 @@
 "use client";
 
-import { useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useProfileStore } from "@/lib/stores/profile";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { PassengerItem, PassengerPayload } from "@zivo/types";
+import { api } from "@/lib/api";
 import { Button, Banner, CardForm, Input, Select, Spinner } from "@/components/ui";
+
+const EMPTY_FORM: PassengerPayload = {
+  nickname: "나",
+  passport_given_name: "",
+  passport_family_name: "",
+  birth_date: "",
+  gender: "M",
+  nationality: "KOR",
+  phone: "",
+  passport_number: "",
+  passport_expiry: "",
+  is_primary: false,
+};
+
+function PassengerForm({
+  initial,
+  onSave,
+  onCancel,
+  saving,
+  error,
+}: {
+  initial: PassengerPayload;
+  onSave: (p: PassengerPayload) => void;
+  onCancel: () => void;
+  saving: boolean;
+  error: string;
+}) {
+  const [form, setForm] = useState<PassengerPayload>(initial);
+  const set = (k: keyof PassengerPayload, v: string | boolean) =>
+    setForm((prev) => ({ ...prev, [k]: v }));
+
+  return (
+    <CardForm>
+      <Input label="별명" value={form.nickname} onChange={(e) => set("nickname", e.target.value)} maxLength={32} placeholder="나, 배우자, 엄마 …" />
+      <div className="grid grid-cols-2 gap-3">
+        <Input label="성 (영문)" value={form.passport_family_name} onChange={(e) => set("passport_family_name", e.target.value.toUpperCase())} placeholder="LEE" maxLength={64} className="uppercase" />
+        <Input label="이름 (영문)" value={form.passport_given_name} onChange={(e) => set("passport_given_name", e.target.value.toUpperCase())} placeholder="SEJIN" maxLength={64} className="uppercase" />
+        <Input label="생년월일" type="date" value={form.birth_date} onChange={(e) => set("birth_date", e.target.value)} />
+        <Select label="성별" value={form.gender} onChange={(e) => set("gender", e.target.value)}>
+          <option value="M">남성</option>
+          <option value="F">여성</option>
+        </Select>
+        <Input label="연락처" type="tel" value={form.phone} onChange={(e) => set("phone", e.target.value)} placeholder="+821012345678" maxLength={32} />
+        <Input label="국적" value={form.nationality} onChange={(e) => set("nationality", e.target.value.toUpperCase().slice(0, 3))} maxLength={3} className="uppercase" />
+      </div>
+      <div className="border-t border-border pt-4 flex flex-col gap-3">
+        <p className="text-xs text-fg-5">여권 정보 (서버 암호화 저장 · 선택)</p>
+        <div className="grid grid-cols-2 gap-3">
+          <Input label="여권번호" value={form.passport_number ?? ""} onChange={(e) => set("passport_number", e.target.value.toUpperCase())} placeholder="M12345678" maxLength={20} autoComplete="off" className="font-mono uppercase" />
+          <Input label="여권 만료일" type="date" value={form.passport_expiry ?? ""} onChange={(e) => set("passport_expiry", e.target.value)} />
+        </div>
+      </div>
+      <label className="flex items-center gap-2 text-sm text-fg-3 cursor-pointer">
+        <input type="checkbox" checked={!!form.is_primary} onChange={(e) => set("is_primary", e.target.checked)} />
+        기본 탑승자로 설정
+      </label>
+      {error && <Banner variant="danger">{error}</Banner>}
+      <div className="flex gap-2">
+        <Button type="button" variant="primary" size="md" disabled={saving || !form.passport_given_name || !form.passport_family_name || !form.birth_date || !form.phone} onClick={() => onSave(form)}>
+          {saving ? "저장 중…" : "저장"}
+        </Button>
+        <Button type="button" variant="ghost" size="md" onClick={onCancel}>취소</Button>
+      </div>
+    </CardForm>
+  );
+}
+
+function PassengerCard({ p, onEdit, onDelete }: { p: PassengerItem; onEdit: () => void; onDelete: () => void }) {
+  return (
+    <div className="bg-white border border-border rounded-xl p-4 flex items-start justify-between gap-3">
+      <div>
+        <div className="flex items-center gap-2 mb-1">
+          <span className="font-semibold text-fg-1">{p.nickname}</span>
+          {p.is_primary && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">기본</span>}
+        </div>
+        <p className="text-sm text-fg-3">{p.passport_family_name} {p.passport_given_name}</p>
+        <p className="text-xs text-fg-5">{p.birth_date} · {p.gender === "M" ? "남성" : "여성"} · {p.phone}</p>
+        {p.passport_number_masked && <p className="text-xs text-fg-5 font-mono">여권 {p.passport_number_masked}</p>}
+      </div>
+      <div className="flex gap-2 shrink-0">
+        <Button variant="ghost" size="sm" onClick={onEdit}>수정</Button>
+        <Button variant="ghost" size="sm" onClick={onDelete}>삭제</Button>
+      </div>
+    </div>
+  );
+}
 
 export default function ProfilePage() {
   const router = useRouter();
-  const s = useProfileStore();
+  const qc = useQueryClient();
+  const [mode, setMode] = useState<"list" | "add" | { edit: PassengerItem }>("list");
+  const [mutError, setMutError] = useState("");
 
-  useEffect(() => {
-    void s.load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  const { data: passengers, isLoading } = useQuery({
+    queryKey: ["passengers"],
+    queryFn: api.listPassengers,
+  });
 
-  const disabled =
-    !s.passport_given_name || !s.passport_family_name || !s.birth_date || !s.phone || s.saving;
+  const createMut = useMutation({
+    mutationFn: api.createPassenger,
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["passengers"] }); setMode("list"); setMutError(""); },
+    onError: () => setMutError("저장 실패. 다시 시도해주세요."),
+  });
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    void s.save();
-  }
+  const updateMut = useMutation({
+    mutationFn: ({ id, body }: { id: string; body: PassengerPayload }) => api.updatePassenger(id, body),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["passengers"] }); setMode("list"); setMutError(""); },
+    onError: () => setMutError("저장 실패. 다시 시도해주세요."),
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: api.deletePassenger,
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["passengers"] }),
+  });
+
+  const saving = createMut.isPending || updateMut.isPending;
 
   return (
     <div className="min-h-screen bg-[--color-bg]">
-      <div className="bg-white border-b border-border px-4 py-3 flex items-center gap-3">
-        <button onClick={() => router.push("/")} className="text-fg-5 hover:text-fg-3 text-sm">
-          ← 뒤로
-        </button>
-        <h1 className="font-semibold text-fg-1">프로필 관리</h1>
+      <div className="bg-white border-b border-border px-4 py-3 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <button onClick={() => router.push("/")} className="text-fg-5 hover:text-fg-3 text-sm">← 뒤로</button>
+          <h1 className="font-semibold text-fg-1">탑승자 관리</h1>
+        </div>
+        {mode === "list" && (
+          <Button variant="primary" size="sm" onClick={() => { setMode("add"); setMutError(""); }}>
+            + 탑승자 추가
+          </Button>
+        )}
       </div>
 
-      <div className="max-w-lg mx-auto p-4">
-        {s.loading && (
-          <div className="flex justify-center py-8">
-            <Spinner size="sm" />
-          </div>
+      <div className="max-w-lg mx-auto p-4 flex flex-col gap-3">
+        {mode === "add" && (
+          <PassengerForm
+            initial={{ ...EMPTY_FORM, is_primary: !passengers?.length }}
+            onSave={(p) => createMut.mutate(p)}
+            onCancel={() => setMode("list")}
+            saving={saving}
+            error={mutError}
+          />
         )}
 
-        <form onSubmit={handleSubmit}>
-          <CardForm>
-            <h2 className="font-semibold text-fg-1">탑승자 정보</h2>
+        {typeof mode === "object" && "edit" in mode && (
+          <PassengerForm
+            initial={{
+              nickname: mode.edit.nickname,
+              passport_given_name: mode.edit.passport_given_name,
+              passport_family_name: mode.edit.passport_family_name,
+              birth_date: mode.edit.birth_date,
+              gender: mode.edit.gender,
+              nationality: mode.edit.nationality,
+              phone: mode.edit.phone,
+              passport_number: "",
+              passport_expiry: "",
+              is_primary: mode.edit.is_primary,
+            }}
+            onSave={(p) => updateMut.mutate({ id: mode.edit.id, body: p })}
+            onCancel={() => setMode("list")}
+            saving={saving}
+            error={mutError}
+          />
+        )}
 
-            <div className="grid grid-cols-2 gap-3">
-              <Input
-                label="성 (영문)"
-                value={s.passport_family_name}
-                onChange={(e) => s.setField("passport_family_name", e.target.value.toUpperCase())}
-                placeholder="LEE"
-                maxLength={64}
-                className="uppercase"
-              />
-              <Input
-                label="이름 (영문)"
-                value={s.passport_given_name}
-                onChange={(e) => s.setField("passport_given_name", e.target.value.toUpperCase())}
-                placeholder="SEJIN"
-                maxLength={64}
-                className="uppercase"
-              />
-              <Input
-                label="생년월일"
-                type="date"
-                value={s.birth_date}
-                onChange={(e) => s.setField("birth_date", e.target.value)}
-              />
-              <Select
-                label="성별"
-                value={s.gender}
-                onChange={(e) => s.setField("gender", e.target.value as "M" | "F")}
-              >
-                <option value="M">남성</option>
-                <option value="F">여성</option>
-              </Select>
-              <Input
-                label="국적"
-                value={s.nationality}
-                onChange={(e) => s.setField("nationality", e.target.value.toUpperCase().slice(0, 3))}
-                maxLength={3}
-                className="uppercase"
-              />
-              <Input
-                label="연락처"
-                type="tel"
-                value={s.phone}
-                onChange={(e) => s.setField("phone", e.target.value)}
-                placeholder="+821012345678"
-                maxLength={32}
-              />
-            </div>
-
-            {/* 여권 정보 */}
-            <div className="border-t border-border pt-4 flex flex-col gap-3">
-              <h3 className="font-medium text-fg-3 text-sm">여권 정보 (서버 암호화 저장)</h3>
-              <Input
-                label={
-                  s.passport_number_masked
-                    ? `여권번호 — 저장됨: ${s.passport_number_masked}`
-                    : "여권번호"
-                }
-                value={s.passport_number}
-                onChange={(e) => s.setField("passport_number", e.target.value.toUpperCase())}
-                placeholder={s.passport_number_masked ? "변경 시에만 입력" : "M12345678"}
-                maxLength={20}
-                autoComplete="off"
-                className="font-mono uppercase"
-              />
-              <Input
-                label="여권 만료일"
-                type="date"
-                value={s.passport_expiry}
-                onChange={(e) => s.setField("passport_expiry", e.target.value)}
-              />
-              <p className="text-xs text-fg-6">
-                여권번호·만료일은 AES-256으로 암호화되어 서버에만 저장됩니다. 로컬 저장소에는 저장되지 않습니다.
-              </p>
-            </div>
-
-            {/* 검색 기본값 */}
-            <div className="border-t border-border pt-4 flex flex-col gap-3">
-              <h3 className="font-medium text-fg-3 text-sm">검색 기본값</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <Input
-                  label="기본 출발지"
-                  value={s.defaults.default_origin}
-                  onChange={(e) => s.setDefault("default_origin", e.target.value.toUpperCase().slice(0, 3))}
-                  maxLength={3}
-                  className="uppercase"
-                />
-                <Input
-                  label="성인 수"
-                  type="number"
-                  min={1}
-                  max={9}
-                  value={s.defaults.adults}
-                  onChange={(e) => s.setDefault("adults", Number(e.target.value) || 1)}
-                />
-                <Select
-                  label="좌석 등급"
-                  value={s.defaults.preferred_cabin}
-                  onChange={(e) => s.setDefault("preferred_cabin", e.target.value as typeof s.defaults.preferred_cabin)}
-                >
-                  <option value="economy">이코노미</option>
-                  <option value="premium_economy">프리미엄 이코노미</option>
-                  <option value="business">비즈니스</option>
-                  <option value="first">퍼스트</option>
-                </Select>
-                <Select
-                  label="수하물"
-                  value={s.defaults.baggage_preference}
-                  onChange={(e) => s.setDefault("baggage_preference", e.target.value as typeof s.defaults.baggage_preference)}
-                >
-                  <option value="any">상관없음</option>
-                  <option value="carry_only">기내만</option>
-                  <option value="checked">위탁 포함</option>
-                </Select>
+        {mode === "list" && (
+          <>
+            {isLoading && <div className="flex justify-center py-8"><Spinner size="sm" /></div>}
+            {!isLoading && !passengers?.length && (
+              <div className="text-center py-12 text-fg-5">
+                <p className="mb-3">저장된 탑승자가 없습니다.</p>
+                <Button variant="primary" size="md" onClick={() => setMode("add")}>첫 탑승자 추가</Button>
               </div>
-            </div>
-
-            {s.error && (
-              <Banner variant="danger">오류: {s.error}</Banner>
             )}
-            {s.saved_at && !s.error && (
-              <Banner variant="success">
-                저장됨 ({new Date(s.saved_at).toLocaleTimeString("ko-KR")})
-              </Banner>
-            )}
-
-            <Button type="submit" variant="primary" size="lg" disabled={disabled}>
-              {s.saving ? "저장 중..." : "프로필 저장"}
-            </Button>
-          </CardForm>
-        </form>
+            {passengers?.map((p) => (
+              <PassengerCard
+                key={p.id}
+                p={p}
+                onEdit={() => { setMode({ edit: p }); setMutError(""); }}
+                onDelete={() => { if (confirm(`${p.nickname} 탑승자를 삭제할까요?`)) deleteMut.mutate(p.id); }}
+              />
+            ))}
+          </>
+        )}
       </div>
     </div>
   );

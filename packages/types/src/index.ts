@@ -99,3 +99,29 @@ export interface BookingItem {
 export interface BookingsListResponse {
   items: BookingItem[];
 }
+
+export interface PassengerItem {
+  id: string;
+  nickname: string;
+  passport_given_name: string;
+  passport_family_name: string;
+  birth_date: string;
+  gender: "M" | "F";
+  nationality: string;
+  phone: string;
+  passport_number_masked: string | null;
+  is_primary: boolean;
+}
+
+export interface PassengerPayload {
+  nickname: string;
+  passport_given_name: string;
+  passport_family_name: string;
+  birth_date: string;
+  gender: "M" | "F";
+  nationality: string;
+  phone: string;
+  passport_number?: string;
+  passport_expiry?: string;
+  is_primary?: boolean;
+}

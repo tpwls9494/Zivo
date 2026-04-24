@@ -28,6 +28,7 @@ class AuthMeResponse(BaseModel):
     email: str | None = None
     nickname: str | None = None
     is_kakao_user: bool
+    token: str | None = None  # exchange 엔드포인트에서만 반환 (Route Handler가 쿠키 직접 설정용)
 
 
 def _set_cookie(response: Response, token: str) -> None:
@@ -79,6 +80,7 @@ async def kakao_exchange(
         email=kakao.email,
         nickname=kakao.nickname,
         is_kakao_user=True,
+        token=token,  # Route Handler가 자체 쿠키 설정에 사용
     )
 
 

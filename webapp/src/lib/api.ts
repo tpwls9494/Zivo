@@ -13,6 +13,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const deviceId = getOrCreateDeviceId();
   const res = await fetch(path, {
     ...init,
+    credentials: "include", // JWT 쿠키 자동 포함
     headers: {
       "Content-Type": "application/json",
       "X-Device-Id": deviceId,
@@ -50,4 +51,6 @@ export const api = {
       body: JSON.stringify(body),
     }),
   listBookings: () => request<BookingsListResponse>("/api/bookings"),
+  getMe: () => request<{ user_id: string; nickname: string | null; email: string | null; is_kakao_user: boolean }>("/api/auth/me"),
+  logout: () => request<{ ok: boolean }>("/api/auth/logout", { method: "POST" }),
 };

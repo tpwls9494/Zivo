@@ -3,6 +3,7 @@ import localFont from "next/font/local";
 import "./globals.css";
 import QueryProvider from "@/providers/QueryProvider";
 import DeviceIdInit from "@/providers/DeviceIdInit";
+import NavBar from "@/components/NavBar";
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,6 +33,7 @@ export default function RootLayout({
       >
         <QueryProvider>
           <DeviceIdInit />
+          <NavBar />
           {children}
         </QueryProvider>
       </body>

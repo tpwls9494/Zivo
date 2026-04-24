@@ -127,10 +127,10 @@ def _krw_only(offers: list[dict]) -> list[dict]:
 
 
 async def search_roundtrip(
-    origin: str, destination: str, depart: str, ret: str
+    origin: str, destination: str, depart: str, ret: str, adults: int = 1
 ) -> list[NormalizedOffer]:
     async with httpx.AsyncClient(timeout=30.0) as client:
-        req_id = await _create_offer_request(client, origin, destination, depart, ret)
+        req_id = await _create_offer_request(client, origin, destination, depart, ret, adults)
         raw = await _list_offers(client, req_id)
     return [_normalize_slice(o, 0) for o in raw]
 
@@ -145,13 +145,13 @@ async def search_oneway(
 
 
 async def search_oneway_pair(
-    origin: str, destination: str, depart: str, ret: str
+    origin: str, destination: str, depart: str, ret: str, adults: int = 1
 ) -> tuple[list[NormalizedOffer], list[NormalizedOffer]]:
     sem = asyncio.Semaphore(10)
 
     async def _req(org: str, dst: str, date: str) -> str:
         async with sem:
-            return await _create_offer_request(client, org, dst, date, None)
+            return await _create_offer_request(client, org, dst, date, None, adults)
 
     async def _offers(req_id: str) -> list[dict]:
         async with sem:

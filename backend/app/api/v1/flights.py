@@ -76,10 +76,10 @@ async def search_flights(req: SearchRequest) -> SearchResponse:
 
     try:
         roundtrip_task = duffel.search_roundtrip(
-            req.origin, req.destination, req.departure_date, req.return_date
+            req.origin, req.destination, req.departure_date, req.return_date, req.adults
         )
         oneway_task = duffel.search_oneway_pair(
-            req.origin, req.destination, req.departure_date, req.return_date
+            req.origin, req.destination, req.departure_date, req.return_date, req.adults
         )
         roundtrip_offers, (outbound_offers, inbound_offers) = await asyncio.gather(
             roundtrip_task, oneway_task

@@ -1,8 +1,8 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useQuery } from "@tanstack/react-query";
-import { useState, Suspense } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useState, Suspense, useEffect } from "react";
 import type { NormalizedOffer } from "@zivo/types";
 import { api } from "@/lib/api";
 import FlightCard from "@/components/FlightCard";
@@ -10,9 +10,14 @@ import ComboCard from "@/components/ComboCard";
 import { Spinner, FullPageSpinner, Banner, Tabs } from "@/components/ui";
 import CalendarHeatmap from "@/components/CalendarHeatmap";
 
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function SearchResults() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState("기본");
 
   const origin = searchParams.get("origin") ?? "";
@@ -21,6 +26,25 @@ function SearchResults() {
   const returnDate = searchParams.get("return") ?? "";
   const pax = Number(searchParams.get("pax") ?? "1");
   const cabin = searchParams.get("cabin") ?? "economy";
+
+  // 검색 결과 로드 시 달력 데이터 백그라운드 프리패치 (탭 클릭 전에 미리 준비)
+  useEffect(() => {
+    if (!origin || !destination) return;
+    const today = new Date();
+    const fromDate = new Date(today.getFullYear(), today.getMonth(), 1);
+    const toDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    const fromStr = localDateStr(fromDate);
+    const toStr = localDateStr(toDate);
+    void queryClient.prefetchQuery({
+      queryKey: ["flexible", origin, destination, fromStr],
+      queryFn: () =>
+        api.request("/api/flights/search/flexible", {
+          method: "POST",
+          body: JSON.stringify({ origin, destination, from_date: fromStr, to_date: toStr, passengers: 1, cabin_class: "economy" }),
+        }),
+      staleTime: 1000 * 60 * 60,
+    });
+  }, [origin, destination, queryClient]);
 
   const { data, isLoading, isError, error } = useQuery({
     queryKey: ["flights", origin, destination, depart, returnDate, pax, cabin],

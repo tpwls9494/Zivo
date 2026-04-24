@@ -42,6 +42,7 @@ async def create_alert(
         return_date=body.return_date,
         target_krw=body.target_krw,
         channel=body.channel,
+        notify_email=body.notify_email,
     )
     db.add(alert)
     await db.commit()

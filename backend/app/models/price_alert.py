@@ -23,7 +23,7 @@ class PriceAlert(Base):
     return_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     target_krw: Mapped[int] = mapped_column(Integer, nullable=False)
     channel: Mapped[str] = mapped_column(String(16), default="email", nullable=False)
-    # email | kakao
+    notify_email: Mapped[str | None] = mapped_column(String(256), nullable=True)
     enabled: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
     last_checked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     last_notified_at: Mapped[datetime | None] = mapped_column(

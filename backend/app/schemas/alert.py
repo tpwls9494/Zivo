@@ -13,6 +13,7 @@ class AlertIn(BaseModel):
     return_date: date | None = None
     target_krw: int = Field(..., gt=0)
     channel: str = "email"  # email | kakao
+    notify_email: str | None = Field(default=None, max_length=256)
 
 
 class AlertOut(BaseModel):

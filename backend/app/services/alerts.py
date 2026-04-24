@@ -57,9 +57,12 @@ async def _notify(db: AsyncSession, alert: PriceAlert, price_krw: int) -> None:
     if alert.channel == "kakao" and profile and profile.phone:
         await send_kakao_alimtalk(profile.phone, alert.origin, alert.destination, depart_str, price_krw)
     else:
-        from app.models.user import User
-        user = await db.get(User, alert.user_id)
-        email = user.email if user else None
+        # notify_email 우선, 없으면 user.email 폴백
+        email = alert.notify_email
+        if not email:
+            from app.models.user import User
+            user = await db.get(User, alert.user_id)
+            email = user.email if user else None
         if email:
             await send_email(email, alert.origin, alert.destination, depart_str, price_krw)
         else:

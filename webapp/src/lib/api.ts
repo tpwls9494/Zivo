@@ -30,6 +30,8 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
     });
     throw err;
   }
+  // 204 No Content (DELETE 등) — 바디 없으므로 json() 호출 안 함
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
 

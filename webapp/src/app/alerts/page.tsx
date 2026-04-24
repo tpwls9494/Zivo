@@ -39,6 +39,7 @@ export default function AlertsPage() {
   const [departDate, setDepartDate] = useState("");
   const [targetKrw, setTargetKrw] = useState("");
   const [channel, setChannel] = useState("email");
+  const [notifyEmail, setNotifyEmail] = useState("");
   const [formError, setFormError] = useState("");
 
   const { data, isLoading, isError } = useQuery({
@@ -71,7 +72,14 @@ export default function AlertsPage() {
       setFormError("날짜와 목표 가격을 확인해주세요.");
       return;
     }
-    createMut.mutate({ origin, destination, depart_date: departDate, target_krw: krw, channel });
+    if (channel === "email" && !notifyEmail) {
+      setFormError("이메일 주소를 입력해주세요.");
+      return;
+    }
+    createMut.mutate({
+      origin, destination, depart_date: departDate, target_krw: krw, channel,
+      notify_email: channel === "email" ? notifyEmail : undefined,
+    });
   }
 
   return (
@@ -101,6 +109,16 @@ export default function AlertsPage() {
                 <option value="kakao">카카오톡</option>
               </Select>
             </div>
+            {channel === "email" && (
+              <Input
+                label="알림 받을 이메일"
+                type="email"
+                value={notifyEmail}
+                onChange={e => setNotifyEmail(e.target.value)}
+                placeholder="example@gmail.com"
+                required
+              />
+            )}
             <Input
               label="목표 가격 (원)"
               type="number"

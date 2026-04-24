@@ -131,7 +131,10 @@ async def search_flexible(req: FlexibleSearchRequest) -> FlexibleSearchResponse:
     if days > 30:
         raise HTTPException(status_code=422, detail="Range must be 30 days or less")
 
+    today = date.today()
     all_dates = [req.from_date + timedelta(days=i) for i in range(days)]
+    # 오늘 이전 날짜는 Duffel에서 결과가 없으므로 스킵
+    future_dates = [d for d in all_dates if d >= today]
 
     async def _fetch_day(d: date) -> DayPrice:
         key = f"zivo:flex:{req.origin}:{req.destination}:{d.isoformat()}"
@@ -146,20 +149,21 @@ async def search_flexible(req: FlexibleSearchRequest) -> FlexibleSearchResponse:
         dp = DayPrice(date=d.isoformat(), min_krw=min_krw)
         if min_krw:
             await cache.set_search_cache(key, dp.model_dump())
-            # override TTL to 1h
             from app.services.cache import _get_redis
             await _get_redis().expire(key, _FLEXIBLE_CACHE_TTL)
         return dp
 
-    # 4개씩 병렬 처리 (Rate limit 배려)
-    sem = asyncio.Semaphore(4)
+    # 8개씩 병렬 처리
+    sem = asyncio.Semaphore(8)
 
     async def _guarded(d: date) -> DayPrice:
         async with sem:
             return await _fetch_day(d)
 
-    prices = await asyncio.gather(*[_guarded(d) for d in all_dates])
-    price_list = list(prices)
+    # 과거 날짜는 None으로 채우고, 미래 날짜만 Duffel 검색
+    past_prices = [DayPrice(date=d.isoformat(), min_krw=None) for d in all_dates if d < today]
+    future_prices = list(await asyncio.gather(*[_guarded(d) for d in future_dates]))
+    price_list = past_prices + future_prices
 
     top3 = sorted(
         [p for p in price_list if p.min_krw is not None],

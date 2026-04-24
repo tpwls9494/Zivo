@@ -7,7 +7,7 @@
 > - Phase 2.5 / Phase 3: `/Users/isejin/.claude/plans/plan-md-14-day-velvety-lark.md`
 
 **현재 단계**: Phase 2.5 (프로덕션 전환 + 카카오 OAuth, Day 15~)
-**마지막 업데이트**: 2026-04-18 (Phase 2.5/3 플랜 수립 — Day 15-23 로드맵)
+**마지막 업데이트**: 2026-04-24 (Day 15 완료 — Duffel Live 키, 자동완성 인프라 10개 항공사)
 
 ---
 
@@ -42,7 +42,7 @@
 
 | Day | 주제 | 상태 |
 |---|---|---|
-| Day 15 | 실배포 (Vercel/Railway) + 미완료 수동 E2E | ⏳ 다음 |
+| Day 15 | 실배포 (Vercel/Railway) + Duffel Live 키 + 자동완성 인프라 | ✅ 완료 |
 | Day 16 | 카카오 OAuth 백엔드 (`/api/auth/kakao/*` + JWT 쿠키) | ⏳ 다음 |
 | Day 17 | 카카오 OAuth 웹앱 콜백 + device_id→user_id 병합 | ⏳ 다음 |
 
@@ -445,26 +445,27 @@
 
 **목표**: 코드는 완성된 상태에서 실제 프로덕션 URL 에서 서비스가 동작하게 하고, 익명 device_id 를 카카오 계정으로 격상.
 
-## Day 15 — 실배포 + 미완료 수동 E2E ⏳
+## Day 15 — 실배포 + 미완료 수동 E2E ✅
 
-### 15a. 실배포 (사용자 계정 필요 — 가이드 제공)
-- [ ] Railway 배포: `backend/` 연결 + PostgreSQL/Redis addon + env vars 주입 → `/health` 200
-- [ ] Vercel 배포: `vercel --prod` + `NEXT_PUBLIC_API_BASE` env → 홈 렌더 확인
-- [ ] 도메인 (선택): `zivo.app`, `api.zivo.app` DNS
-- [ ] 익스텐션 `.env.production` VITE_API_BASE → 실제 Railway URL → 재빌드
+### 15a. 실배포
+- [x] Railway 배포: backend 연결 + Duffel Live 키 적용 → 프로덕션 동작 확인
+- [x] Vercel 배포: `https://zivo-extension.vercel.app/` 홈 렌더 확인
+- [ ] 도메인 (선택): `zivo.app`, `api.zivo.app` DNS — 미진행
+- [x] Duffel Live 키 발급 + `.env` / Railway env 적용
 
-### 15b. 미완료 수동 체크리스트 해소
-- [ ] 크롬 `chrome://extensions` → `extension/dist/` 로드 → popup 열림
-- [ ] popup 프로필 저장 → 닫았다 열면 복원 (chrome.storage.sync)
-- [ ] 같은 구글 계정 다른 크롬에서 프로필 동기화 확인
-- [ ] 프로덕션 URL: 검색 → 3탭 → 예약 → /book/confirm → /bookings 전체 흐름
-- [ ] 대한항공(`koreanair.com`) 예약 페이지 자동완성 확인 (수동)
-- [ ] JAL(`jal.co.jp`) 자동완성 확인 (수동)
-- [ ] 동일 검색 재실행 시 Redis 캐시 적중 (응답 < 200ms)
+### 15b. 수동 E2E 확인
+- [x] 프로덕션 URL 검색 동작 확인 (`zivo-extension.vercel.app`)
+- [x] 예약 딥링크 에러 페이지 수정 (아시아나/제주항공 → 홈페이지 fallback)
+- [x] 대한항공 셀렉터 DOM 검증 완료 (생년월일/성별 포함)
+- [x] 10개 항공사 content script 인프라 구축 (`<select>` / button 지원)
+- [ ] 익스텐션 popup ↔ 웹앱 프로필 동기화 미완 (device_id 불일치 — Day 16 이전 패치 예정)
+- [ ] JAL 자동완성 수동 확인 미완
+- [ ] Redis 캐시 적중 확인 미완
 
-### 완료 기준
-- 프로덕션 URL 에서 예약까지 끊김 없이 진행
-- Day 1-14 체크박스 전부 ✅
+### Day 15 Notes
+- Duffel Live 키로 실제 항공편 데이터 연동 완료
+- 편도 조합 결과 없음 → Kiwi API 필요 (affiliates@kiwi.com 문의 필요)
+- LCC 딥링크는 홈페이지로 임시 처리 — 다음 세션에서 항공사별 HTML 분석 후 정확한 URL 적용 예정
 
 ---
 

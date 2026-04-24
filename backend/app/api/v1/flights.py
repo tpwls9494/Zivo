@@ -1,8 +1,10 @@
 import asyncio
 import logging
 import uuid
+from datetime import date, timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -98,10 +100,73 @@ async def search_flights(req: SearchRequest) -> SearchResponse:
     return response
 
 
-@router.post("/search/flexible")
-async def search_flexible() -> dict:
-    """Day 7+ 에서 구현."""
-    return {"top": []}
+class FlexibleSearchRequest(BaseModel):
+    origin: str = Field(..., min_length=3, max_length=3)
+    destination: str = Field(..., min_length=3, max_length=3)
+    from_date: date
+    to_date: date
+    passengers: int = Field(default=1, ge=1, le=9)
+    cabin_class: str = "economy"
+
+
+class DayPrice(BaseModel):
+    date: str
+    min_krw: int | None
+
+
+class FlexibleSearchResponse(BaseModel):
+    prices: list[DayPrice]
+    top3: list[DayPrice]
+
+
+_FLEXIBLE_CACHE_TTL = 3600  # 1h
+
+
+@router.post("/search/flexible", response_model=FlexibleSearchResponse)
+async def search_flexible(req: FlexibleSearchRequest) -> FlexibleSearchResponse:
+    if req.to_date < req.from_date:
+        raise HTTPException(status_code=422, detail="to_date must be after from_date")
+
+    days = (req.to_date - req.from_date).days + 1
+    if days > 30:
+        raise HTTPException(status_code=422, detail="Range must be 30 days or less")
+
+    all_dates = [req.from_date + timedelta(days=i) for i in range(days)]
+
+    async def _fetch_day(d: date) -> DayPrice:
+        key = f"zivo:flex:{req.origin}:{req.destination}:{d.isoformat()}"
+        cached = await cache.get_search_cache(key)
+        if cached:
+            return DayPrice(**cached)
+        try:
+            offers = await duffel.search_oneway(req.origin, req.destination, d.isoformat())
+            min_krw = min(o.total_krw for o in offers) if offers else None
+        except Exception:
+            min_krw = None
+        dp = DayPrice(date=d.isoformat(), min_krw=min_krw)
+        if min_krw:
+            await cache.set_search_cache(key, dp.model_dump())
+            # override TTL to 1h
+            from app.services.cache import _get_redis
+            await _get_redis().expire(key, _FLEXIBLE_CACHE_TTL)
+        return dp
+
+    # 4개씩 병렬 처리 (Rate limit 배려)
+    sem = asyncio.Semaphore(4)
+
+    async def _guarded(d: date) -> DayPrice:
+        async with sem:
+            return await _fetch_day(d)
+
+    prices = await asyncio.gather(*[_guarded(d) for d in all_dates])
+    price_list = list(prices)
+
+    top3 = sorted(
+        [p for p in price_list if p.min_krw is not None],
+        key=lambda p: p.min_krw,  # type: ignore[return-value]
+    )[:3]
+
+    return FlexibleSearchResponse(prices=price_list, top3=top3)
 
 
 async def _revalidate_price(offer: NormalizedOffer) -> None:

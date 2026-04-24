@@ -8,6 +8,7 @@ import { api } from "@/lib/api";
 import FlightCard from "@/components/FlightCard";
 import ComboCard from "@/components/ComboCard";
 import { Spinner, FullPageSpinner, Banner, Tabs } from "@/components/ui";
+import CalendarHeatmap from "@/components/CalendarHeatmap";
 
 function SearchResults() {
   const searchParams = useSearchParams();
@@ -143,10 +144,7 @@ function SearchResults() {
         )}
 
         {activeTab === "달력" && (
-          <div className="text-center py-16 text-fg-6">
-            <p className="text-lg mb-1">달력 뷰는 준비 중입니다</p>
-            <p className="text-sm">Day 14 이후 제공 예정</p>
-          </div>
+          <CalendarHeatmap origin={origin} destination={destination} />
         )}
       </div>
     </div>

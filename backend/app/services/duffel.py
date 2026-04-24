@@ -135,6 +135,15 @@ async def search_roundtrip(
     return [_normalize_slice(o, 0) for o in raw]
 
 
+async def search_oneway(
+    origin: str, destination: str, depart: str
+) -> list[NormalizedOffer]:
+    async with httpx.AsyncClient(timeout=30.0) as client:
+        req_id = await _create_offer_request(client, origin, destination, depart, None)
+        raw = await _list_offers(client, req_id)
+    return [_normalize_slice(o, 0) for o in raw]
+
+
 async def search_oneway_pair(
     origin: str, destination: str, depart: str, ret: str
 ) -> tuple[list[NormalizedOffer], list[NormalizedOffer]]:

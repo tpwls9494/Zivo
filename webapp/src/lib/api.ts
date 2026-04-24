@@ -31,7 +31,10 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   return (await res.json()) as T;
 }
 
+export { request };
+
 export const api = {
+  request,
   health: () => request<{ status: string }>("/health"),
   searchFlights: (body: unknown) =>
     request<SearchResponse>("/api/flights/search", {

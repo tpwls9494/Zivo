@@ -73,6 +73,12 @@ export default function NavBar() {
         )}
 
         <button
+          onClick={() => router.push("/alerts")}
+          className="text-xs text-fg-5 hover:text-fg-3"
+        >
+          알림
+        </button>
+        <button
           onClick={() => router.push("/profile")}
           className="text-xs text-fg-5 hover:text-fg-3"
         >

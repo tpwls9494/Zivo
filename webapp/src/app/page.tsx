@@ -15,16 +15,81 @@ const AIRPORTS = [
   { code: "OKA", label: "오키나와 (OKA)" },
 ];
 
+const OFFSETS_KEY = "zivo:search-offsets";
+
+interface SearchOffsets {
+  departDays: number;
+  returnDays: number | null; // null = 오는날 미선택
+}
+
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
+// 오늘 기준 N일 뒤 날짜 문자열 (최소 오늘)
+function todayPlusDays(days: number): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
+  d.setDate(d.getDate() + Math.max(0, days));
+  return localDateStr(d);
+}
+
+// 날짜 문자열 → 오늘로부터 며칠 뒤인지
+function daysFromToday(dateStr: string): number {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const target = new Date(dateStr + "T00:00:00");
+  return Math.round((target.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+}
+
+function loadOffsets(): SearchOffsets {
+  if (typeof window === "undefined") return { departDays: 0, returnDays: 3 };
+  try {
+    const raw = localStorage.getItem(OFFSETS_KEY);
+    if (raw) return JSON.parse(raw) as SearchOffsets;
+  } catch {}
+  return { departDays: 0, returnDays: 3 };
+}
+
+function saveOffsets(offsets: SearchOffsets) {
+  localStorage.setItem(OFFSETS_KEY, JSON.stringify(offsets));
+}
+
 export default function Home() {
   const router = useRouter();
-  const today = new Date().toISOString().split("T")[0];
+  const todayStr = localDateStr(new Date());
 
+  // 저장된 offset으로 초기 날짜 계산 (없으면 오늘 / 3일 뒤 기본값)
   const [origin, setOrigin] = useState("ICN");
   const [destination, setDestination] = useState("KIX");
-  const [depart, setDepart] = useState("");
-  const [returnDate, setReturnDate] = useState("");
+  const [depart, setDepart] = useState(() => {
+    const { departDays } = loadOffsets();
+    return todayPlusDays(departDays);
+  });
+  const [returnDate, setReturnDate] = useState(() => {
+    const { returnDays } = loadOffsets();
+    return returnDays !== null ? todayPlusDays(returnDays) : "";
+  });
   const [pax, setPax] = useState(1);
   const [cabin, setCabin] = useState("economy");
+
+  function handleDepartChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setDepart(val);
+    if (val) {
+      const retDays = returnDate ? daysFromToday(returnDate) : null;
+      saveOffsets({ departDays: daysFromToday(val), returnDays: retDays });
+    }
+  }
+
+  function handleReturnChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const val = e.target.value;
+    setReturnDate(val);
+    saveOffsets({
+      departDays: depart ? daysFromToday(depart) : 0,
+      returnDays: val ? daysFromToday(val) : null,
+    });
+  }
 
   function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -78,17 +143,17 @@ export default function Home() {
               <Input
                 label="가는 날"
                 type="date"
-                min={today}
+                min={todayStr}
                 value={depart}
-                onChange={(e) => setDepart(e.target.value)}
+                onChange={handleDepartChange}
                 required
               />
               <Input
                 label="오는 날 (선택)"
                 type="date"
-                min={depart || today}
+                min={depart || todayStr}
                 value={returnDate}
-                onChange={(e) => setReturnDate(e.target.value)}
+                onChange={handleReturnChange}
               />
             </div>
 

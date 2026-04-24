@@ -6,8 +6,8 @@
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 > - Phase 2.5 / Phase 3: `/Users/isejin/.claude/plans/plan-md-14-day-velvety-lark.md`
 
-**현재 단계**: Phase 3 (커버리지·고도화, Day 18~)
-**마지막 업데이트**: 2026-04-25 (Day 16-17 완료 — 카카오 OAuth 백엔드 + 웹앱, 프로덕션 로그인 확인)
+**현재 단계**: Phase 3 (커버리지·고도화, Day 21~)
+**마지막 업데이트**: 2026-04-25 (Day 18-19 완료 — 가격 알림 CRUD + 달력 히트맵, Day 20 보류)
 
 ---
 
@@ -50,10 +50,10 @@
 
 | Day | 주제 | 상태 |
 |---|---|---|
-| Day 18 | 가격 알림 백엔드 (`/api/alerts` + APScheduler cron) | ⏳ 다음 |
-| Day 19 | 가격 알림 웹앱 `/alerts` + 달력 탭 실구현 | ⏳ 다음 |
-| Day 20 | Kiwi Tequila 병렬 소스 (`services/kiwi.py`) | ⏳ 다음 |
-| Day 21 | ANA/제주항공 content script selector 확대 | ⏳ 다음 |
+| Day 18 | 가격 알림 백엔드 (`/api/alerts` + APScheduler cron) | ✅ 완료 |
+| Day 19 | 가격 알림 웹앱 `/alerts` + 달력 탭 실구현 | ✅ 완료 |
+| Day 20 | Kiwi Tequila 병렬 소스 (`services/kiwi.py`) | ⏸ 보류 (API 신규 불가, 유저 확보 후 재신청) |
+| Day 21 | 항공사 content script selector 실DOM 기반 확대 | ⏳ 다음 |
 | Day 22 | Chrome Web Store 등록 제출 | ⏳ 다음 |
 | Day 23 | v0.3.0 태그 + CHANGELOG + 회고 | ⏳ 다음 |
 
@@ -621,35 +621,31 @@
 <!-- 여기에 Day 에 속하지 않는 발견·결정 기록 -->
 
 - Duffel 파트너 승인 지연 시: sandbox 모드 (`duffel_test_` 키) 로 Day 3~6 진행 가능
-- Kiwi Tequila 는 Phase 1 에서는 호출하지 않음 (Phase 2 대기)
+- Kiwi Tequila API: 2024년부터 초대제 전환, MAU 50,000+ 필요. 유저 확보 후 재신청 예정. 대안: Travelpayouts (제주항공 미지원으로 부분적), Amadeus (Duffel과 인벤토리 중복)
 - 아이콘 PNG 3종은 Day 1 완료 시점에 디자인 확정 필요
 
 ## Next
 
-> **다음 세션 — 웹앱 디자인 개선 → 항공사 자동완성**
+> **다음 세션 — Day 21: 항공사 셀렉터 실DOM 검증 → Day 22-23: v0.3.0 릴리즈**
 >
-> ### 1. 웹앱 디자인 개선 (Claude Design 활용) ← 먼저
-> - [ ] 홈 검색 폼 UI 개선
-> - [ ] 검색 결과 카드 디자인
-> - [ ] 예약 플로우 UI 개선
-> - [ ] 전체 컬러/타이포그래피 통일
+> ### Day 21 — 항공사 content script selector 실DOM 기반 확대
+> 베스트에포트 셀렉터 9개 작성 완료 (2026-04-25). 실제 테스트 후 수정 필요:
+> - 각 항공사 예약 폼에서 크롬 익스텐션 자동완성 테스트
+> - 안 되는 항공사: 해당 예약 페이지 HTML 저장 → `항공사_html/` → 셀렉터 수정
+> - 참고: 대한항공(KE) 셀렉터만 실DOM 검증 완료
 >
-> ### 2. 나머지 항공사 HTML 분석 + 셀렉터 완성
-> 대한항공 완료 (2026-04-24). 나머지 9개 항공사 진행:
-> - [ ] 아시아나 (`항공사_html/` 에 HTML 저장 → `selectors/asiana.ts` 업데이트)
-> - [ ] JAL (`selectors/jal.ts` 업데이트)
-> - [ ] ANA (`selectors/ana.ts`)
-> - [ ] 제주항공 (`selectors/jejuair.ts`)
-> - [ ] 진에어 (`selectors/jinair.ts`)
-> - [ ] 에어부산 (`selectors/airbusan.ts`)
-> - [ ] 티웨이 (`selectors/tway.ts`)
-> - [ ] 피치항공 (`selectors/peach.ts`)
-> - [ ] 제트스타 (`selectors/jetstar.ts`)
+> ### Day 22 — Chrome Web Store 등록 제출
+> - 아이콘 PNG 3종 (16/48/128) 실 디자인 (사용자 제공 필요)
+> - 스크린샷 5장, 프로모 이미지
+> - `extension/PRIVACY.md` 작성
+> - `zivo-v0.3.0.zip` 생성 + 제출 ($5 개발자 계정 필요)
 >
-> 작업 방식: 각 항공사 예약 페이지(비로그인 게스트) → 탑승자 정보 폼 → HTML 저장 → Claude가 셀렉터 분석
+> ### Day 23 — v0.3.0 패키징 + 회고
+> - CHANGELOG v0.3.0 작성
+> - v0.3.0 git 태그
+> - plan.md Phase 3 완료 업데이트
 >
-> ### 3. 익스텐션 device_id → 웹앱 URL 파라미터 임시 동기화 (카카오 OAuth 전 패치)
-> `extension/src/popup/App.tsx` 웹앱 열기 버튼에 device_id URL 파라미터 추가
->
-> ### 4. Day 16 카카오 OAuth (이후)
-> `backend/app/api/v1/auth.py` + `services/kakao.py` 신규 작성
+> ### 수정 필요 항목 (다음 세션에서 처리)
+> - Claude Design 디자인 시스템 추가 페이지 적용 (alerts, bookings 등)
+> - 달력 히트맵 성능 개선 (현재 첫 로드 느림, Redis 캐시 이후는 빠름)
+> - 항공사 셀렉터 실DOM 검증 (현재 베스트에포트 수준)

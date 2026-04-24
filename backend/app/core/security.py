@@ -52,9 +52,15 @@ def mask_passport(number: str) -> str:
     return f"{number[:2]}{'*' * (len(number) - 4)}{number[-2:]}"
 
 
-def create_access_token(subject: str, expires_minutes: int = 60 * 24 * 7) -> str:
+def create_access_token(
+    subject: str,
+    expires_minutes: int = 60 * 24 * 7,
+    extra: dict | None = None,
+) -> str:
     now = datetime.now(UTC)
-    payload = {"sub": subject, "iat": now, "exp": now + timedelta(minutes=expires_minutes)}
+    payload: dict[str, Any] = {"sub": subject, "iat": now, "exp": now + timedelta(minutes=expires_minutes)}
+    if extra:
+        payload.update(extra)
     return jwt.encode(payload, settings.JWT_SECRET_KEY, algorithm="HS256")
 
 

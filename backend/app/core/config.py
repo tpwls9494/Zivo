@@ -28,6 +28,7 @@ class Settings(BaseSettings):
 
     # Kakao (Phase 2)
     KAKAO_CLIENT_ID: str = ""
+    KAKAO_CLIENT_SECRET: str = ""
     KAKAO_REDIRECT_URI: str = ""
     KAKAO_ALIMTALK_API_KEY: str = ""
 

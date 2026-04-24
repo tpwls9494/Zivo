@@ -1,26 +1,19 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, Header, HTTPException, status
+from fastapi import APIRouter, Depends
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.api.deps import get_current_user_or_device
 from app.core.security import encrypt_sensitive, mask_passport
 from app.db.session import get_db
+from app.models.user import User
 from app.models.user_default import UserDefault
 from app.models.user_profile import UserProfile
 from app.schemas.profile import EmptyProfileOut, ProfileIn, ProfileOut
 from app.schemas.user_default import UserDefaultOut
-from app.services.user import get_or_create_user
 
 router = APIRouter()
-
-
-def _require_device_id(x_device_id: str | None = Header(default=None, alias="X-Device-Id")) -> str:
-    if not x_device_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST, detail="X-Device-Id header required"
-        )
-    return x_device_id
 
 
 def _defaults_out(row: UserDefault) -> UserDefaultOut:
@@ -34,10 +27,9 @@ def _defaults_out(row: UserDefault) -> UserDefaultOut:
 
 @router.get("", response_model=ProfileOut | EmptyProfileOut, response_model_exclude_none=True)
 async def get_profile(
-    device_id: str = Depends(_require_device_id),
+    user: User = Depends(get_current_user_or_device),
     db: AsyncSession = Depends(get_db),
 ) -> ProfileOut | EmptyProfileOut:
-    user = await get_or_create_user(db, device_id)
 
     defaults_row = (
         await db.execute(select(UserDefault).where(UserDefault.user_id == user.id))
@@ -81,10 +73,9 @@ async def get_profile(
 @router.put("", response_model=ProfileOut, response_model_exclude_none=True)
 async def upsert_profile(
     payload: ProfileIn,
-    device_id: str = Depends(_require_device_id),
+    user: User = Depends(get_current_user_or_device),
     db: AsyncSession = Depends(get_db),
 ) -> ProfileOut:
-    user = await get_or_create_user(db, device_id)
 
     profile = (
         await db.execute(select(UserProfile).where(UserProfile.user_id == user.id))

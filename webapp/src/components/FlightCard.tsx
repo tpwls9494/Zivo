@@ -35,12 +35,12 @@ export default function FlightCard({ offer, onBook }: Props) {
         <span className="text-fg-6">{offer.departure_iata}</span>
         <div className="flex-1 flex flex-col items-center">
           <span className="text-xs text-fg-6">{formatDuration(offer.duration_minutes)}</span>
-          <div className="w-full flex items-center gap-1">
-            <div className="flex-1 h-px bg-border-input" />
-            <svg className="w-3 h-3 text-fg-6" fill="currentColor" viewBox="0 0 20 20">
-              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+          <div className="w-full flex items-center gap-1.5">
+            <div className="flex-1 h-0.5 rounded-full bg-gradient-to-r from-border-input to-primary-mid" />
+            <svg className="w-4 h-4 text-primary flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+              <path d="M21 16v-2l-8-5V3.5C13 2.67 12.33 2 11.5 2S10 2.67 10 3.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5l8 2.5z" />
             </svg>
-            <div className="flex-1 h-px bg-border-input" />
+            <div className="flex-1 h-0.5 rounded-full bg-gradient-to-l from-border-input to-primary-mid" />
           </div>
           <span className="text-xs text-fg-6">
             {offer.stops === 0 ? "직항" : `경유 ${offer.stops}회`}

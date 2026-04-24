@@ -6,15 +6,12 @@ import { api } from "@/lib/api";
 import { ZivoLogo, ZivoWordmark } from "@/components/ui";
 
 const KAKAO_CLIENT_ID = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID ?? "";
-const REDIRECT_URI =
-  typeof window !== "undefined"
-    ? `${window.location.origin}/auth/kakao/callback`
-    : "";
 
 function kakaoLoginUrl() {
+  const redirectUri = `${window.location.origin}/auth/kakao/callback`;
   const params = new URLSearchParams({
     client_id: KAKAO_CLIENT_ID,
-    redirect_uri: REDIRECT_URI,
+    redirect_uri: redirectUri,
     response_type: "code",
   });
   return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;

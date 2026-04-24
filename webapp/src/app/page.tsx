@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button, CardForm, Input, Select, ZivoLogo, ZivoWordmark } from "@/components/ui";
 
 const AIRPORTS = [
   { code: "ICN", label: "서울 (ICN)" },
@@ -40,126 +41,89 @@ export default function Home() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-gray-50">
+    <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-[--color-bg]">
       <div className="w-full max-w-lg">
-        <h1 className="text-3xl font-bold text-center mb-2">Zivo ✈</h1>
-        <p className="text-center text-gray-500 text-sm mb-8">
+        <div className="flex items-center justify-center gap-2 mb-2">
+          <ZivoLogo size={36} />
+          <ZivoWordmark height={32} />
+        </div>
+        <p className="text-center text-fg-5 text-sm mb-8">
           편도 조합으로 더 싸게 · 원터치로 더 빠르게
         </p>
 
-        <form
-          onSubmit={handleSearch}
-          className="bg-white rounded-2xl shadow p-6 flex flex-col gap-4"
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">
-                출발
-              </label>
-              <select
+        <form onSubmit={handleSearch}>
+          <CardForm>
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                label="출발"
                 value={origin}
                 onChange={(e) => setOrigin(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {AIRPORTS.map((a) => (
-                  <option key={a.code} value={a.code}>
-                    {a.label}
-                  </option>
+                  <option key={a.code} value={a.code}>{a.label}</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">
-                도착
-              </label>
-              <select
+              </Select>
+              <Select
+                label="도착"
                 value={destination}
                 onChange={(e) => setDestination(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {AIRPORTS.map((a) => (
-                  <option key={a.code} value={a.code}>
-                    {a.label}
-                  </option>
+                  <option key={a.code} value={a.code}>{a.label}</option>
                 ))}
-              </select>
+              </Select>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">
-                가는 날
-              </label>
-              <input
+            <div className="grid grid-cols-2 gap-3">
+              <Input
+                label="가는 날"
                 type="date"
                 min={today}
                 value={depart}
                 onChange={(e) => setDepart(e.target.value)}
                 required
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">
-                오는 날 <span className="text-gray-400">(선택)</span>
-              </label>
-              <input
+              <Input
+                label="오는 날 (선택)"
                 type="date"
                 min={depart || today}
                 value={returnDate}
                 onChange={(e) => setReturnDate(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">
-                인원
-              </label>
-              <select
+            <div className="grid grid-cols-2 gap-3">
+              <Select
+                label="인원"
                 value={pax}
                 onChange={(e) => setPax(Number(e.target.value))}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <option key={n} value={n}>
-                    {n}명
-                  </option>
+                  <option key={n} value={n}>{n}명</option>
                 ))}
-              </select>
-            </div>
-            <div>
-              <label className="text-xs font-medium text-gray-600 mb-1 block">
-                좌석
-              </label>
-              <select
+              </Select>
+              <Select
+                label="좌석"
                 value={cabin}
                 onChange={(e) => setCabin(e.target.value)}
-                className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="economy">이코노미</option>
                 <option value="premium_economy">프리미엄 이코노미</option>
                 <option value="business">비즈니스</option>
                 <option value="first">퍼스트</option>
-              </select>
+              </Select>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-700 transition-colors mt-1"
-          >
-            항공권 검색
-          </button>
+            <Button type="submit" variant="primary" size="lg">
+              항공권 검색
+            </Button>
+          </CardForm>
         </form>
 
         <div className="text-center mt-6">
-          <a href="/profile" className="text-sm text-gray-400 hover:text-gray-600">
+          <Button variant="link" size="sm" onClick={() => router.push("/profile")}>
             탑승자 프로필 관리
-          </a>
+          </Button>
         </div>
       </div>
     </main>

@@ -2,6 +2,47 @@
 
 All notable changes to Zivo are documented here.
 
+## [0.3.0] — 2026-04-25
+
+### Added
+
+**Phase 2.5 — 프로덕션 전환 + 카카오 OAuth**
+- 카카오 OAuth 백엔드: `POST /api/auth/kakao/exchange`, `GET /api/auth/me`, `POST /api/auth/logout`
+- JWT httpOnly 쿠키 인증, `get_current_user_or_device()` 의존성 (JWT 우선, Device-ID 폴백)
+- `POST /api/auth/merge-device` — 기존 device_id 프로필·예약을 카카오 계정으로 병합
+- 웹앱 카카오 로그인 버튼 + `/auth/kakao/callback` 라우트
+- Railway 실배포 + Duffel Live 키 연동
+
+**Phase 3 — 가격 알림·달력·자동완성 고도화**
+- `POST/GET/DELETE /api/alerts` — 가격 알림 CRUD
+- APScheduler 6h cron — 가격 트리거 시 알림(log stub, 카카오알림톡 키 시 실전송)
+- 웹앱 `/alerts` — 알림 생성·목록·삭제 UI
+- `GET /api/flights/search/flexible` — 주말 31일 병렬 검색, Redis 1h 캐시
+- `CalendarHeatmap` — 달력 히트맵 탭 (날짜별 최저가 시각화)
+- 달력 데이터 백그라운드 프리패치 (검색 결과 로드 시 미리 요청)
+- content script: ANA·제주항공·아시아나·진에어·에어부산·티웨이·피치·제트스타 selector 추가 (10개 항공사 완성)
+- `autofill.ts` 개선: 영문 월 이름 매핑(March→3), SPA 타임아웃 폴백 3단계
+
+**아이콘·스토어 준비**
+- 아이콘 PNG 3종 (16×16·48×48·128×128) 실 디자인 — Z 로고, #2563EB 배경
+- `extension/PRIVACY.md` — AES-256-GCM 암호화·비로컬저장 정책 명시
+- `extension/store-assets/` — Chrome Web Store 제출용 에셋 가이드
+
+### Changed
+- 익스텐션 manifest version → `0.3.0`
+- content_scripts matches 10개 항공사로 확장
+
+### Test
+- 백엔드 pytest 유지
+- 익스텐션 vitest 31개 (+8: ANA·Jeju Air fixture, findElement 헬퍼, select 테스트)
+
+### Known Limitations
+- 항공사 셀렉터 실DOM 검증: 대한항공(KE)만 완료, 나머지 9개 베스트에포트
+- Chrome Web Store 제출: 스크린샷 5장 + $5 개발자 계정 필요 (수동)
+- Kiwi Tequila API: MAU 50,000+ 요건으로 보류 (Day 20)
+
+---
+
 ## [0.2.0] — 2026-04-18
 
 ### Added

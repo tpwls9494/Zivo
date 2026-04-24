@@ -6,8 +6,8 @@
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 > - Phase 2.5 / Phase 3: `/Users/isejin/.claude/plans/plan-md-14-day-velvety-lark.md`
 
-**현재 단계**: Phase 3 (커버리지·고도화, Day 21~)
-**마지막 업데이트**: 2026-04-25 (Day 21 완료 — 항공사 content script 개선, vitest 31개)
+**현재 단계**: Phase 3 완료 → Phase 4 대기
+**마지막 업데이트**: 2026-04-25 (Day 22-23 완료 — 아이콘 생성, PRIVACY.md, v0.3.0 릴리즈)
 
 ---
 
@@ -54,8 +54,8 @@
 | Day 19 | 가격 알림 웹앱 `/alerts` + 달력 탭 실구현 | ✅ 완료 |
 | Day 20 | Kiwi Tequila 병렬 소스 (`services/kiwi.py`) | ⏸ 보류 (API 신규 불가, 유저 확보 후 재신청) |
 | Day 21 | 항공사 content script selector 실DOM 기반 확대 | ✅ 완료 |
-| Day 22 | Chrome Web Store 등록 제출 | ⏳ 다음 |
-| Day 23 | v0.3.0 태그 + CHANGELOG + 회고 | ⏳ 다음 |
+| Day 22 | Chrome Web Store 등록 제출 | ✅ 완료 (스크린샷·제출은 수동) |
+| Day 23 | v0.3.0 태그 + CHANGELOG + 회고 | ✅ 완료 |
 
 범례: ✅ 완료 · 🔄 진행 중 · ⏳ 다음 · ⏸ 대기 · ⚠️ 블록
 
@@ -580,23 +580,29 @@
 
 ---
 
-## Day 22 — Chrome Web Store 제출 ⏳
+## Day 22 — Chrome Web Store 제출 ✅
 
-- [ ] 아이콘 PNG 3종 (16/48/128) 실 디자인 교체 (사용자 제공)
-- [ ] `extension/store-assets/` — 스크린샷 5장, 프로모 이미지
-- [ ] `extension/PRIVACY.md` — 여권번호 AES 암호화/비로컬저장 명시
-- [ ] `extension/manifest.json` version → `0.3.0`
-- [ ] `zivo-v0.3.0.zip` 생성 + Chrome Web Store 심사 제출 ($5 개발자 계정 필요)
-- [ ] README / CHANGELOG 갱신
+- [x] 아이콘 PNG 3종 (16/48/128) — Z 로고 Python/Pillow 생성 (#2563EB 배경, 흰색 Z)
+- [x] `extension/store-assets/` — 에셋 가이드 + 스토어 리스팅 문구 작성
+- [x] `extension/PRIVACY.md` — AES-256-GCM 암호화·비로컬저장 정책 명시
+- [x] `extension/manifest.json` version → `0.3.0`
+- [x] `zivo-v0.3.0.zip` 생성 (65 kB)
+- [x] CHANGELOG v0.3.0 작성
+- [ ] 스크린샷 5장 캡처 + Chrome Web Store 심사 제출 (수동 — $5 개발자 계정 필요)
+
+### Day 22 Notes
+- 아이콘: ZivoLogo SVG (Logo.tsx) 기반, 4× 수퍼샘플링 후 Lanczos 다운샘플
+- 스토어 리스팅 문구 한국어 draft: `store-assets/README.md`
+- 실제 제출 전 스크린샷 5장 필요 (zivo-extension.vercel.app에서 캡처)
 
 ---
 
-## Day 23 — v0.3.0 패키징 + 회고 ⏳
+## Day 23 — v0.3.0 패키징 + 회고 ✅
 
-- [ ] CHANGELOG v0.3.0 작성
-- [ ] v0.3.0 git 태그
-- [ ] `plan.md` Phase 3 섹션 ✅ 업데이트
-- [ ] Phase 4 스코프 재결정 (Amadeus / 보험 연계 / 통계 대시보드)
+- [x] CHANGELOG v0.3.0 작성
+- [x] v0.3.0 git 태그
+- [x] `plan.md` Phase 3 섹션 ✅ 업데이트
+- [ ] Phase 4 스코프 재결정 (Amadeus / 보험 연계 / 통계 대시보드) — 별도 세션
 
 ## Phase 2.5/3 Notes (공용)
 
@@ -633,21 +639,15 @@
 
 ## Next
 
-> **다음 세션 — Day 22: Chrome Web Store 제출 → Day 23: v0.3.0 릴리즈**
+> **Phase 3 완료 — v0.3.0 릴리즈됨.**
+> Phase 4 시작 또는 보류 항목 처리:
 >
-> ### Day 22 — Chrome Web Store 등록 제출
-> - 아이콘 PNG 3종 (16/48/128) 실 디자인 (사용자 제공 필요)
-> - `extension/store-assets/` — 스크린샷 5장, 프로모 이미지
-> - `extension/PRIVACY.md` 작성 (여권번호 AES 암호화/비로컬저장 명시)
-> - `extension/manifest.json` version → `0.3.0`
-> - `zivo-v0.3.0.zip` 생성 + Chrome Web Store 심사 제출 ($5 개발자 계정 필요)
+> ### 수동으로 남은 항목
+> - Chrome Web Store 제출: `zivo-v0.3.0.zip` + 스크린샷 5장 캡처 + $5 개발자 계정
+> - 항공사별 실DOM 검증 (KE 외 나머지 9개)
 >
-> ### Day 23 — v0.3.0 패키징 + 회고
-> - CHANGELOG v0.3.0 작성
-> - v0.3.0 git 태그
-> - plan.md Phase 3 완료 업데이트
-> - Phase 4 스코프 재결정
->
-> ### 보류/수동 확인 항목
-> - 항공사별 실DOM 검증 (KE 외 나머지 9개 — 수동 테스트 필요)
-> - 달력 히트맵 성능 개선 (첫 로드 느림, Redis 캐시 이후는 빠름)
+> ### Phase 4 후보 (추후 결정)
+> - Amadeus API 병렬 소스 (Duffel 대비 LCC 커버리지 보완)
+> - 편도 조합 지연 보험 연계
+> - 절약액 통계 대시보드
+> - React Native 앱 (Phase 5)

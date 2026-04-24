@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Zivo",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "한일 노선 항공권 편도 조합 최저가 & 원터치 예약",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA1VNapQwQlwW5YJqQs2Ms3ONj0fN8zNzdtIhRFySZfA8MQVRkJdxXFJNsuCj8NJCFAjAg+dQzB3Jsb2isQxVHDCxLLJ5gKKzjNz8PhK/Sb5asLR/Sb8rSAaFSONyTnY8v8R+cDCMSPiq0FFmSplObTzJEKY93AW9HQ+53cLqDOReo46Jjof5aTww7MjMwY84E8WsNSz+9p90UOc6nKbzKHFdldx6/pemJkTq2QF7Fk6tNgFWuYwPzBU6jiZweGO/94bcSQ4LZUFsVZPQQOnjk6G9moeakBdUOWkxKXe1/jB2lNBOCP04FONpkT3I0uY2p3Fp/WbWnX9K4+TbM0FQ4swIDAQAB",
   "action": {

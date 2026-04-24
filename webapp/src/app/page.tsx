@@ -185,11 +185,6 @@ export default function Home() {
           </CardForm>
         </form>
 
-        <div className="text-center mt-6">
-          <Button variant="link" size="sm" onClick={() => router.push("/profile")}>
-            탑승자 프로필 관리
-          </Button>
-        </div>
       </div>
     </main>
   );

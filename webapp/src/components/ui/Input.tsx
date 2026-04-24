@@ -3,7 +3,7 @@ import { cn } from "@/lib/utils";
 
 const inputBase =
   "w-full border border-border-input rounded-lg px-3 py-2 text-sm text-fg-1 bg-white " +
-  "focus:outline-none focus:ring-2 focus:ring-primary-DEFAULT transition-shadow";
+  "focus:outline-none focus:ring-2 focus:ring-primary transition-shadow";
 
 interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;

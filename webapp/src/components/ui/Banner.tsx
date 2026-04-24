@@ -11,7 +11,7 @@ const bannerStyles: Record<BannerVariant, string> = {
   info:    "bg-primary-light text-primary-text",
   success: "bg-success-light text-success-text",
   warning: "bg-warning-light text-warning-text border border-warning-mid",
-  danger:  "bg-danger-light text-danger-DEFAULT border border-danger-mid",
+  danger:  "bg-danger-light text-danger border border-danger-mid",
 };
 
 export function Banner({ variant = "info", className, children, ...props }: BannerProps) {

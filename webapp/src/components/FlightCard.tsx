@@ -25,7 +25,7 @@ export default function FlightCard({ offer, onBook }: Props) {
     <Card>
       <div className="flex items-center justify-between mb-3">
         <span className="font-semibold text-fg-2">{offer.carrier}</span>
-        <span className="text-xl font-bold text-primary-DEFAULT">
+        <span className="text-xl font-bold text-primary">
           {offer.total_krw.toLocaleString()}원
         </span>
       </div>

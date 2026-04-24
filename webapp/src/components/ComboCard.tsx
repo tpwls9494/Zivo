@@ -13,11 +13,11 @@ export default function ComboCard({ combo, onBook }: Props) {
   return (
     <div
       className={`rounded-xl border shadow-sm overflow-hidden ${
-        isHighSaving ? "border-success-DEFAULT" : "border-border"
+        isHighSaving ? "border-success" : "border-border"
       }`}
     >
       {isHighSaving && (
-        <div className="bg-success-DEFAULT text-white text-xs font-semibold px-4 py-1.5 text-center">
+        <div className="bg-success text-white text-xs font-semibold px-4 py-1.5 text-center">
           {combo.savings_pct.toFixed(0)}% 절약 — {combo.savings_krw.toLocaleString()}원 저렴
         </div>
       )}
@@ -36,7 +36,7 @@ export default function ComboCard({ combo, onBook }: Props) {
         <div className="flex items-center justify-between pt-2 border-t border-border mt-1">
           <div>
             <span className="text-xs text-fg-6">합계 </span>
-            <span className="font-bold text-lg text-primary-DEFAULT">
+            <span className="font-bold text-lg text-primary">
               {combo.total_krw.toLocaleString()}원
             </span>
           </div>

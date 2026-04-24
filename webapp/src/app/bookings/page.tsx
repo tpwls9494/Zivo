@@ -51,7 +51,7 @@ function BookingCard({ booking }: { booking: BookingItem }) {
       </div>
 
       <div className="flex items-center justify-between">
-        <span className="font-bold text-primary-DEFAULT">{booking.total_krw.toLocaleString()}원</span>
+        <span className="font-bold text-primary">{booking.total_krw.toLocaleString()}원</span>
         {booking.created_at && (
           <span className="text-xs text-fg-6">
             {new Date(String(booking.created_at)).toLocaleDateString("ko-KR")} 예약

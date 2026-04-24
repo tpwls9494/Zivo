@@ -33,7 +33,7 @@ export function Tabs({ tabs, defaultTab, onChange, className }: TabsProps) {
           className={cn(
             "flex-1 py-3 text-sm font-medium transition-colors border-b-2",
             active === tab.key
-              ? "border-primary-DEFAULT text-primary-DEFAULT"
+              ? "border-primary text-primary"
               : "border-transparent text-fg-5 hover:text-fg-3"
           )}
         >

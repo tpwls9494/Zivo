@@ -72,7 +72,7 @@ export default function BookConfirmPage() {
                 href={booking.deep_link_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="block w-full bg-primary-DEFAULT text-white text-center py-3 rounded-xl font-semibold hover:bg-primary-hover transition-colors text-sm"
+                className="block w-full bg-primary text-white text-center py-3 rounded-xl font-semibold hover:bg-primary-hover transition-colors text-sm"
               >
                 항공사 페이지에서 결제 완료하기 →
               </a>

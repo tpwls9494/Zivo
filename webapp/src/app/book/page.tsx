@@ -2,7 +2,7 @@
 
 import { useSearchParams, useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { useState, useEffect, Suspense } from "react";
+import { useState, useEffect, useRef, Suspense } from "react";
 import type { NormalizedOffer, PassengerItem, ProfileResponse } from "@zivo/types";
 import { api } from "@/lib/api";
 import { Button, Banner, CardForm, FullPageSpinner, Input, Select } from "@/components/ui";
@@ -42,13 +42,18 @@ function BookForm() {
   const [offer, setOffer] = useState<NormalizedOffer | null>(null);
   const [comboInbound, setComboInbound] = useState<NormalizedOffer | null>(null);
 
-  // 탑승자 목록 로드 시 기본값 설정
+  // 최초 1회만 자동 채우기 — 이후 사용자가 수정한 값을 덮어쓰지 않음
+  const hasFilled = useRef(false);
   useEffect(() => {
+    if (hasFilled.current) return;
     if (passengers && passengers.length > 0) {
+      hasFilled.current = true;
       const primary = passengers.find((p) => p.is_primary) ?? passengers[0];
       setSelectedPassengerId(primary.id);
       fillFromPassenger(primary);
-    } else if (profile) {
+    } else if (passengers !== undefined && profile) {
+      // passengers 로드 완료(빈 배열)이고 profile이 있을 때
+      hasFilled.current = true;
       fillFromProfile(profile);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps

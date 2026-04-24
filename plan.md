@@ -6,8 +6,8 @@
 > - Phase 2 웹앱 피벗: `/Users/isejin/.claude/plans/next-js-react-native-resilient-tarjan.md`
 > - Phase 2.5 / Phase 3: `/Users/isejin/.claude/plans/plan-md-14-day-velvety-lark.md`
 
-**현재 단계**: Phase 2.5 (프로덕션 전환 + 카카오 OAuth, Day 15~)
-**마지막 업데이트**: 2026-04-24 (Day 15 완료 — Duffel Live 키, 자동완성 인프라 10개 항공사)
+**현재 단계**: Phase 3 (커버리지·고도화, Day 18~)
+**마지막 업데이트**: 2026-04-25 (Day 16-17 완료 — 카카오 OAuth 백엔드 + 웹앱, 프로덕션 로그인 확인)
 
 ---
 
@@ -43,8 +43,8 @@
 | Day | 주제 | 상태 |
 |---|---|---|
 | Day 15 | 실배포 (Vercel/Railway) + Duffel Live 키 + 자동완성 인프라 | ✅ 완료 |
-| Day 16 | 카카오 OAuth 백엔드 (`/api/auth/kakao/*` + JWT 쿠키) | ⏳ 다음 |
-| Day 17 | 카카오 OAuth 웹앱 콜백 + device_id→user_id 병합 | ⏳ 다음 |
+| Day 16 | 카카오 OAuth 백엔드 (`/api/auth/kakao/*` + JWT 쿠키) | ✅ 완료 |
+| Day 17 | 카카오 OAuth 웹앱 콜백 + device_id→user_id 병합 | ✅ 완료 |
 
 ### Phase 3 — 커버리지·고도화 (Day 18-23)
 

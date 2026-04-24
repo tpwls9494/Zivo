@@ -1,5 +1,6 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { api } from "@/lib/api";
@@ -7,19 +8,20 @@ import { ZivoLogo, ZivoWordmark } from "@/components/ui";
 
 const KAKAO_CLIENT_ID = process.env.NEXT_PUBLIC_KAKAO_CLIENT_ID ?? "";
 
-function kakaoLoginUrl() {
-  const redirectUri = `${window.location.origin}/auth/kakao/callback`;
-  const params = new URLSearchParams({
-    client_id: KAKAO_CLIENT_ID,
-    redirect_uri: redirectUri,
-    response_type: "code",
-  });
-  return `https://kauth.kakao.com/oauth/authorize?${params.toString()}`;
-}
-
 export default function NavBar() {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [kakaoUrl, setKakaoUrl] = useState("#");
+
+  useEffect(() => {
+    const redirectUri = `${window.location.origin}/auth/kakao/callback`;
+    const params = new URLSearchParams({
+      client_id: KAKAO_CLIENT_ID,
+      redirect_uri: redirectUri,
+      response_type: "code",
+    });
+    setKakaoUrl(`https://kauth.kakao.com/oauth/authorize?${params.toString()}`);
+  }, []);
 
   const { data: me } = useQuery({
     queryKey: ["auth/me"],
@@ -60,7 +62,7 @@ export default function NavBar() {
           </>
         ) : (
           <a
-            href={kakaoLoginUrl()}
+            href={kakaoUrl}
             className="flex items-center gap-1.5 bg-[#FEE500] text-[#191919] text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-[#F0D800] transition-colors"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">

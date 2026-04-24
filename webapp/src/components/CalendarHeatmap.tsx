@@ -23,24 +23,32 @@ function priceColor(price: number, min: number, max: number): string {
   return "bg-danger-mid text-danger";
 }
 
+// UTC 변환 없이 로컬 날짜를 YYYY-MM-DD 형식으로 반환
+function localDateStr(d: Date): string {
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 export default function CalendarHeatmap({ origin, destination }: Props) {
   const today = new Date();
+  const todayStr = localDateStr(today);
   const [year, setYear] = useState(today.getFullYear());
   const [month, setMonth] = useState(today.getMonth()); // 0-indexed
 
   const fromDate = new Date(year, month, 1);
   const toDate = new Date(year, month + 1, 0); // last day of month
+  const fromStr = localDateStr(fromDate);
+  const toStr = localDateStr(toDate);
 
   const { data, isLoading, isError } = useQuery({
-    queryKey: ["flexible", origin, destination, fromDate.toISOString().split("T")[0]],
+    queryKey: ["flexible", origin, destination, fromStr],
     queryFn: () =>
       api.request<{ prices: DayPrice[]; top3: DayPrice[] }>("/api/flights/search/flexible", {
         method: "POST",
         body: JSON.stringify({
           origin,
           destination,
-          from_date: fromDate.toISOString().split("T")[0],
-          to_date: toDate.toISOString().split("T")[0],
+          from_date: fromStr,
+          to_date: toStr,
           passengers: 1,
           cabin_class: "economy",
         }),
@@ -118,7 +126,7 @@ export default function CalendarHeatmap({ origin, destination }: Props) {
               const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
               const price = priceMap.get(dateStr) ?? null;
               const colorClass = price ? priceColor(price, minPrice, maxPrice) : "text-fg-6";
-              const isToday = dateStr === today.toISOString().split("T")[0];
+              const isToday = dateStr === todayStr;
 
               return (
                 <div

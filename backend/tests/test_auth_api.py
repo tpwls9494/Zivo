@@ -104,8 +104,8 @@ async def test_device_merge_on_exchange(client: AsyncClient) -> None:
             "passport_family_name": "HONG",
             "birth_date": "1990-01-01",
             "gender": "M",
-            "nationality": "KR",
-            "phone": "01012345678",
+            "nationality": "KOR",
+            "phone": "+821012345678",
             "defaults": {"default_origin": "ICN", "preferred_cabin": "economy", "adults": 1, "baggage_preference": "any"},
         },
     )

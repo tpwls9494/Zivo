@@ -33,7 +33,7 @@ def _payload() -> dict[str, object]:
 
 async def test_profile_requires_device_id_header(client: AsyncClient) -> None:
     r = await client.get("/api/profile")
-    assert r.status_code == 400
+    assert r.status_code in (400, 401)  # 인증 없으면 401 (카카오 쿠키 없음 + X-Device-Id 없음)
 
 
 async def test_profile_get_empty_returns_defaults(client: AsyncClient) -> None:

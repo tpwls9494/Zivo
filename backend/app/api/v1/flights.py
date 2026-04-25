@@ -38,81 +38,44 @@ def _deep_link(
     return_date: str | None = None,
 ) -> str:
     d = departure_date.replace("-", "")  # "2026-06-07" → "20260607"
-    rd = return_date.replace("-", "") if return_date else None
     is_rt = return_date is not None
 
+    # 스카이스캐너 URL — 날짜 형식 YYMMDD (2026-06-07 → 260607)
+    dep_sky = departure_date[2:].replace("-", "")
+    ret_sky = return_date[2:].replace("-", "") if return_date else None
+    def skyscanner(org: str = origin, dst: str = destination) -> str:
+        base = f"https://www.skyscanner.co.kr/transport/flights/{org.lower()}/{dst.lower()}/{dep_sky}"
+        if ret_sky:
+            base += f"/{ret_sky}"
+        return base + f"/?adults={passengers}&cabinclass=economy"
+
     routes = {
-        # ── 대형 항공사 (Duffel 주요 커버리지) ────────────────────────
-        # Korean Air: URL 파라미터로 검색 결과 직접 진입 가능 (실DOM 검증)
+        # ── 대형 항공사 ────────────────────────────────────────────────
+        # Korean Air: URL 파라미터 직접 지원 확인됨
         "KE": (
             f"https://www.koreanair.com/booking/select-flights"
             f"?lang=ko&cabin=Y&adults={passengers}"
             f"&origin={origin}&destination={destination}&departDate={departure_date}"
             + (f"&returnDate={return_date}&tripType=RT" if is_rt else "&tripType=OW")
         ),
-        # Asiana: tripType RT/OW + YYYYMMDD 형식
-        "OZ": (
-            f"https://flyasiana.com/C/KR/KO/booking/flightList"
-            f"?tripType={'RT' if is_rt else 'OW'}"
-            f"&originAirport={origin}&destinationAirport={destination}"
-            f"&departureDate={d}&adultCount={passengers}&childCount=0&infantCount=0"
-            + (f"&returnDate={rd}" if rd else "")
-        ),
-        # JAL: 한국어 국제선 검색 페이지
-        "JL": (
-            f"https://www.jal.co.jp/kr/ko/inter/search/"
-            f"?depCode={origin}&arrCode={destination}"
-            f"&depDate={departure_date}&adt={passengers}&chd=0&inf=0"
-            f"&tripType={'RT' if is_rt else 'OW'}"
-            + (f"&retDate={return_date}" if return_date else "")
-        ),
-        # ANA: 한국어 국제선 검색 페이지
-        "NH": (
-            f"https://www.ana.co.jp/en/kr/book-plan/flight/search/"
-            f"?depAirportCode={origin}&arrAirportCode={destination}"
-            f"&departureDate={departure_date}&adt={passengers}&chd=0&inf=0"
-            f"&tripType={'RT' if is_rt else 'OW'}"
-            + (f"&returnDate={return_date}" if return_date else "")
-        ),
-        # ── 한국 LCC ─────────────────────────────────────────────────
-        # Jeju Air: depAirportCode/arrAirportCode + departureDate(YYYYMMDD) + adultCount
-        "7C": (
-            f"https://www.jejuair.net/kr/ko/booking/search"
-            f"?depAirportCode={origin}&arrAirportCode={destination}"
-            f"&departureDate={d}&adultCount={passengers}"
-            f"&tripType={'RT' if is_rt else 'OW'}"
-            + (f"&returnDate={rd}" if rd else "")
-        ),
-        "LJ": (
-            f"https://www.jinair.com/booking/availability"
-            f"?depPort={origin}&arrPort={destination}&depDate={d}&paxAdult={passengers}&tripType=OW"
-        ),
-        "TW": (
-            f"https://www.twayair.com/app/booking/availability"
-            f"?dep={origin}&arr={destination}&depDate={d}&adult={passengers}&tripType=OW"
-        ),
-        "BX": (
-            f"https://www.airbusan.com/part/booking/main"
-            f"?depAirport={origin}&arrAirport={destination}&depDate={d}&adultCount={passengers}&tripType=OW"
-        ),
-        "RS": f"https://www.airseoul.com",
-        "ZE": f"https://www.eastarjet.com",
-        # ── 일본 LCC ─────────────────────────────────────────────────
-        "MM": (
-            f"https://booking.flypeach.com/kr"
-            f"?origin={origin}&destination={destination}&departure={departure_date}&adults={passengers}&tripType=OW"
-        ),
-        "GK": (
-            f"https://www.jetstar.com/kr/ko/flights"
-            f"?from={origin}&to={destination}&date={departure_date}&adults={passengers}"
-        ),
-        "IJ": f"https://www.springjapan.com/kr",
-        "NQ": f"https://www.airjapan.com",
+        # Asiana·JAL·ANA: URL 파라미터 미지원 → 스카이스캐너 경유
+        "OZ": skyscanner(),
+        "JL": skyscanner(),
+        "NH": skyscanner(),
+        # ── 한국 LCC — URL 파라미터 미지원 → 스카이스캐너 경유 ─────────
+        "7C": skyscanner(),
+        "LJ": skyscanner(),
+        "TW": skyscanner(),
+        "BX": skyscanner(),
+        "RS": skyscanner(),
+        "ZE": skyscanner(),
+        # ── 일본 LCC — 스카이스캐너 경유 ─────────────────────────────
+        "MM": skyscanner(),
+        "GK": skyscanner(),
+        "IJ": skyscanner(),
+        "NQ": skyscanner(),
     }
-    return routes.get(
-        carrier_iata,
-        f"https://www.google.com/flights?q={origin}+{destination}+{departure_date}"
-    )
+    return routes.get(carrier_iata, skyscanner())
 
 
 @router.post("/search", response_model=SearchResponse)

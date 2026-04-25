@@ -88,7 +88,7 @@ async def test_book_combo_different_deep_links(client: AsyncClient) -> None:
     )
     data = res.json()
     assert "koreanair" in data["bookings"][0]["deep_link_url"]
-    assert "asiana" in data["bookings"][1]["deep_link_url"]
+    assert "skyscanner" in data["bookings"][1]["deep_link_url"]  # OZ → 스카이스캐너 경유
 
 
 @pytest.mark.asyncio
@@ -155,4 +155,4 @@ async def test_book_unknown_carrier_returns_google_flights(client: AsyncClient) 
         headers={"X-Device-Id": device_id},
     )
     assert res.status_code == 200
-    assert "google.com/flights" in res.json()["bookings"][0]["deep_link_url"]
+    assert "skyscanner" in res.json()["bookings"][0]["deep_link_url"]

@@ -75,9 +75,13 @@ def _deep_link(
             + (f"&returnDate={return_date}" if return_date else "")
         ),
         # ── 한국 LCC ─────────────────────────────────────────────────
+        # Jeju Air: depAirportCode/arrAirportCode + departureDate(YYYYMMDD) + adultCount
         "7C": (
             f"https://www.jejuair.net/kr/ko/booking/search"
-            f"?depAirportCode={origin}&arrAirportCode={destination}&depDate={d}&adtCnt={passengers}&tripType=OW"
+            f"?depAirportCode={origin}&arrAirportCode={destination}"
+            f"&departureDate={d}&adultCount={passengers}"
+            f"&tripType={'RT' if is_rt else 'OW'}"
+            + (f"&returnDate={rd}" if rd else "")
         ),
         "LJ": (
             f"https://www.jinair.com/booking/availability"

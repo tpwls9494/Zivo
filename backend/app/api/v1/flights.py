@@ -1,7 +1,7 @@
 import asyncio
 import logging
 import uuid
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 
 from fastapi import APIRouter, Depends, Header, HTTPException
 from pydantic import BaseModel, Field
@@ -29,53 +29,98 @@ _ALLOWED_PAIRS = frozenset(
     | {(jp, kr) for jp in _SUPPORTED_JP for kr in _SUPPORTED_KR}
 )
 
-def _deep_link(
-    carrier_iata: str,
-    origin: str,
-    destination: str,
-    departure_date: str,
-    passengers: int = 1,
-    return_date: str | None = None,
-) -> str:
-    d = departure_date.replace("-", "")  # "2026-06-07" → "20260607"
-    is_rt = return_date is not None
+# ── Skyscanner 내부 ID 매핑 (실 URL에서 확인된 값) ──────────────────
+_SKY_AIRPORTS: dict[str, str] = {
+    "ICN": "12409",
+    "KIX": "13068",
+    # 미확인 공항은 추가 시 입력
+}
 
-    # 스카이스캐너 URL — 날짜 형식 YYMMDD (2026-06-07 → 260607)
-    dep_sky = departure_date[2:].replace("-", "")
-    ret_sky = return_date[2:].replace("-", "") if return_date else None
-    def skyscanner(org: str = origin, dst: str = destination) -> str:
-        base = f"https://www.skyscanner.co.kr/transport/flights/{org.lower()}/{dst.lower()}/{dep_sky}"
+_SKY_CARRIERS: dict[str, str] = {
+    "7C": "32179",   # 제주항공 ✅
+    "OZ": "32558",   # 아시아나항공 ✅
+    "NH": "32571",   # ANA ✅
+    # 미확인 항공사는 추가 시 입력
+}
+
+
+def _sky_fmt(dt: datetime) -> str:
+    """datetime → Skyscanner 시각 포맷 (YYMMDDHHmm)"""
+    return dt.strftime("%y%m%d%H%M")
+
+
+def _skyscanner_config_url(offer: "NormalizedOffer", passengers: int) -> str | None:
+    """Skyscanner /config/ 직항편 URL. 매핑 없는 항공사/공항이면 None 반환."""
+    carrier_id = _SKY_CARRIERS.get(offer.carrier_iata)
+    origin_id  = _SKY_AIRPORTS.get(offer.departure_iata)
+    dest_id    = _SKY_AIRPORTS.get(offer.arrival_iata)
+    if not all([carrier_id, origin_id, dest_id]):
+        return None
+
+    dep_date = offer.departure_at.strftime("%y%m%d")   # 260617
+    leg_out = (
+        f"{origin_id}-{_sky_fmt(offer.departure_at)}"
+        f"--{carrier_id}-{offer.stops}-{dest_id}"
+        f"-{_sky_fmt(offer.arrival_at)}"
+    )
+
+    if offer.return_at and offer.return_arrival_at:
+        ret_date = offer.return_at.strftime("%y%m%d")   # 260626
+        leg_ret = (
+            f"{dest_id}-{_sky_fmt(offer.return_at)}"
+            f"--{carrier_id}-0-{origin_id}"
+            f"-{_sky_fmt(offer.return_arrival_at)}"
+        )
+        itinerary = f"{leg_out}%7C{leg_ret}"  # %7C = URL-encoded |
+        return (
+            f"https://www.skyscanner.co.kr/transport/flights"
+            f"/{offer.departure_iata.lower()}/{offer.arrival_iata.lower()}"
+            f"/{dep_date}/{ret_date}/config/{itinerary}"
+            f"?adults={passengers}&cabinclass=economy&airlines=-{carrier_id}"
+        )
+    else:
+        return (
+            f"https://www.skyscanner.co.kr/transport/flights"
+            f"/{offer.departure_iata.lower()}/{offer.arrival_iata.lower()}"
+            f"/{dep_date}/config/{leg_out}"
+            f"?adults={passengers}&cabinclass=economy&airlines=-{carrier_id}"
+        )
+
+
+def _deep_link(offer: "NormalizedOffer", passengers: int = 1) -> str:
+    origin      = offer.departure_iata
+    destination = offer.arrival_iata
+    dep_date    = offer.departure_at.strftime("%Y-%m-%d")
+    ret_date    = offer.return_at.strftime("%Y-%m-%d") if offer.return_at else None
+    dep_sky     = offer.departure_at.strftime("%y%m%d")
+    ret_sky     = offer.return_at.strftime("%y%m%d") if offer.return_at else None
+    is_rt       = ret_date is not None
+
+    def skyscanner_search() -> str:
+        base = (
+            f"https://www.skyscanner.co.kr/transport/flights"
+            f"/{origin.lower()}/{destination.lower()}/{dep_sky}"
+        )
         if ret_sky:
             base += f"/{ret_sky}"
         return base + f"/?adults={passengers}&cabinclass=economy"
 
-    routes = {
-        # ── 대형 항공사 ────────────────────────────────────────────────
-        # Korean Air: URL 파라미터 직접 지원 확인됨
-        "KE": (
+    # 1) Korean Air: 자체 URL 파라미터 지원 확인됨
+    if offer.carrier_iata == "KE":
+        return (
             f"https://www.koreanair.com/booking/select-flights"
             f"?lang=ko&cabin=Y&adults={passengers}"
-            f"&origin={origin}&destination={destination}&departDate={departure_date}"
-            + (f"&returnDate={return_date}&tripType=RT" if is_rt else "&tripType=OW")
-        ),
-        # Asiana·JAL·ANA: URL 파라미터 미지원 → 스카이스캐너 경유
-        "OZ": skyscanner(),
-        "JL": skyscanner(),
-        "NH": skyscanner(),
-        # ── 한국 LCC — URL 파라미터 미지원 → 스카이스캐너 경유 ─────────
-        "7C": skyscanner(),
-        "LJ": skyscanner(),
-        "TW": skyscanner(),
-        "BX": skyscanner(),
-        "RS": skyscanner(),
-        "ZE": skyscanner(),
-        # ── 일본 LCC — 스카이스캐너 경유 ─────────────────────────────
-        "MM": skyscanner(),
-        "GK": skyscanner(),
-        "IJ": skyscanner(),
-        "NQ": skyscanner(),
-    }
-    return routes.get(carrier_iata, skyscanner())
+            f"&origin={origin}&destination={destination}&departDate={dep_date}"
+            + (f"&returnDate={ret_date}&tripType=RT" if is_rt else "&tripType=OW")
+        )
+
+    # 2) 매핑된 항공사: Skyscanner 특정 항공편 URL
+    config_url = _skyscanner_config_url(offer, passengers)
+    if config_url:
+        return config_url
+
+    # 3) 매핑 없는 항공사: Skyscanner 일반 검색
+    return skyscanner_search()
 
 
 @router.post("/search", response_model=SearchResponse)
@@ -245,21 +290,11 @@ async def book_flight(
     )
     db.add(outbound_booking)
 
-    return_date_str = (
-        body.offer.return_at.strftime("%Y-%m-%d") if body.offer.return_at else None
-    )
     result_bookings: list[BookingDetail] = [
         BookingDetail(
             booking_id=outbound_id,
             direction=direction,
-            deep_link_url=_deep_link(
-                body.offer.carrier_iata,
-                body.offer.departure_iata,
-                body.offer.arrival_iata,
-                body.offer.departure_at.strftime("%Y-%m-%d"),
-                passengers=1,
-                return_date=return_date_str,
-            ),
+            deep_link_url=_deep_link(body.offer),
             combo_group_id=combo_group_id,
         )
     ]
@@ -285,12 +320,7 @@ async def book_flight(
             BookingDetail(
                 booking_id=inbound_id,
                 direction="inbound",
-                deep_link_url=_deep_link(
-                    body.combo_inbound.carrier_iata,
-                    body.combo_inbound.departure_iata,
-                    body.combo_inbound.arrival_iata,
-                    body.combo_inbound.departure_at.strftime("%Y-%m-%d"),
-                ),
+                deep_link_url=_deep_link(body.combo_inbound),
                 combo_group_id=combo_group_id,
             )
         )

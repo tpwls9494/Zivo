@@ -41,7 +41,8 @@ function findElement(sel: FieldSelector): HTMLElement | null {
   const elType = sel.elementType ?? "input";
 
   if (sel.cssSelector) {
-    return document.querySelector<HTMLElement>(sel.cssSelector);
+    const el = document.querySelector<HTMLElement>(sel.cssSelector);
+    if (el) return el;
   }
   if (sel.id) {
     const el = document.getElementById(sel.id);
@@ -56,37 +57,57 @@ function findElement(sel: FieldSelector): HTMLElement | null {
     if (el) return el;
   }
   if (sel.placeholder) {
-    const inputs = document.querySelectorAll<HTMLInputElement>("input");
-    for (const input of inputs) {
+    for (const input of document.querySelectorAll<HTMLInputElement>("input")) {
       if (input.placeholder?.toLowerCase().includes(sel.placeholder.toLowerCase())) return input;
     }
   }
   if (sel.label) {
-    const labels = document.querySelectorAll<HTMLLabelElement>("label");
-    for (const label of labels) {
+    // 1) label[for] → getElementById
+    for (const label of document.querySelectorAll<HTMLLabelElement>("label")) {
       if (label.textContent?.trim().includes(sel.label)) {
         const forId = label.htmlFor;
-        if (forId) return document.getElementById(forId);
-        return label.querySelector<HTMLElement>("input, select");
+        if (forId) {
+          const el = document.getElementById(forId);
+          if (el) return el;
+        }
+        const inner = label.querySelector<HTMLElement>("input, select");
+        if (inner) return inner;
+      }
+    }
+    // 2) 부모·형제 탐색 — label 다음 input/select
+    for (const el of document.querySelectorAll<HTMLElement>("*")) {
+      const text = el.textContent?.trim() ?? "";
+      if (
+        el.children.length === 0 &&
+        text === sel.label &&
+        el.tagName !== "INPUT" &&
+        el.tagName !== "SELECT"
+      ) {
+        const parent = el.parentElement;
+        if (!parent) continue;
+        const sibling = parent.querySelector<HTMLElement>("input, select") ??
+          parent.nextElementSibling?.querySelector<HTMLElement>("input, select");
+        if (sibling) return sibling;
       }
     }
   }
   if (sel.buttonText) {
-    const candidates = document.querySelectorAll<HTMLElement>(
-      "button, label, [role='radio'], [role='button']"
-    );
-    for (const el of candidates) {
-      if (el.textContent?.trim().includes(sel.buttonText)) return el;
+    for (const el of document.querySelectorAll<HTMLElement>(
+      "button, label, [role='radio'], [role='button'], span, div"
+    )) {
+      if (el.textContent?.trim() === sel.buttonText) return el;
     }
   }
   return null;
 }
 
 function fillInput(input: HTMLInputElement, value: string) {
+  input.focus();
   const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value")?.set;
   nativeSetter?.call(input, value);
-  input.dispatchEvent(new Event("input", { bubbles: true }));
+  input.dispatchEvent(new Event("input",  { bubbles: true }));
   input.dispatchEvent(new Event("change", { bubbles: true }));
+  input.dispatchEvent(new Event("blur",   { bubbles: true }));
 }
 
 // English month name → numeric string (for select options like "March", "Jan")

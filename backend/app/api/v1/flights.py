@@ -29,26 +29,50 @@ _ALLOWED_PAIRS = frozenset(
     | {(jp, kr) for jp in _SUPPORTED_JP for kr in _SUPPORTED_KR}
 )
 
-def _deep_link(carrier_iata: str, origin: str, destination: str, departure_date: str, passengers: int = 1) -> str:
+def _deep_link(
+    carrier_iata: str,
+    origin: str,
+    destination: str,
+    departure_date: str,
+    passengers: int = 1,
+    return_date: str | None = None,
+) -> str:
     d = departure_date.replace("-", "")  # "2026-06-07" → "20260607"
+    rd = return_date.replace("-", "") if return_date else None
+    is_rt = return_date is not None
+
     routes = {
-        # ── 대형 항공사 ───────────────────────────────────────────────
+        # ── 대형 항공사 (Duffel 주요 커버리지) ────────────────────────
+        # Korean Air: URL 파라미터로 검색 결과 직접 진입 가능 (실DOM 검증)
         "KE": (
             f"https://www.koreanair.com/booking/select-flights"
-            f"?lang=ko&cabin=Y&adults={passengers}&origin={origin}&destination={destination}&departDate={departure_date}"
+            f"?lang=ko&cabin=Y&adults={passengers}"
+            f"&origin={origin}&destination={destination}&departDate={departure_date}"
+            + (f"&returnDate={return_date}&tripType=RT" if is_rt else "&tripType=OW")
         ),
+        # Asiana: tripType RT/OW + YYYYMMDD 형식
         "OZ": (
             f"https://flyasiana.com/C/KR/KO/booking/flightList"
-            f"?tripType=OW&originAirport={origin}&destinationAirport={destination}"
+            f"?tripType={'RT' if is_rt else 'OW'}"
+            f"&originAirport={origin}&destinationAirport={destination}"
             f"&departureDate={d}&adultCount={passengers}&childCount=0&infantCount=0"
+            + (f"&returnDate={rd}" if rd else "")
         ),
+        # JAL: 한국어 국제선 검색 페이지
         "JL": (
-            f"https://www.jal.co.jp/inter/search/"
-            f"?lang=kr&type=ow&dep={origin}&arr={destination}&date={departure_date}&adult={passengers}"
+            f"https://www.jal.co.jp/kr/ko/inter/search/"
+            f"?depCode={origin}&arrCode={destination}"
+            f"&depDate={departure_date}&adt={passengers}&chd=0&inf=0"
+            f"&tripType={'RT' if is_rt else 'OW'}"
+            + (f"&retDate={return_date}" if return_date else "")
         ),
+        # ANA: 한국어 국제선 검색 페이지
         "NH": (
             f"https://www.ana.co.jp/en/kr/book-plan/flight/search/"
-            f"?tripType=OW&dep={origin}&arr={destination}&departure={departure_date}&adult={passengers}"
+            f"?depAirportCode={origin}&arrAirportCode={destination}"
+            f"&departureDate={departure_date}&adt={passengers}&chd=0&inf=0"
+            f"&tripType={'RT' if is_rt else 'OW'}"
+            + (f"&returnDate={return_date}" if return_date else "")
         ),
         # ── 한국 LCC ─────────────────────────────────────────────────
         "7C": (
@@ -254,6 +278,9 @@ async def book_flight(
     )
     db.add(outbound_booking)
 
+    return_date_str = (
+        body.offer.return_at.strftime("%Y-%m-%d") if body.offer.return_at else None
+    )
     result_bookings: list[BookingDetail] = [
         BookingDetail(
             booking_id=outbound_id,
@@ -263,6 +290,8 @@ async def book_flight(
                 body.offer.departure_iata,
                 body.offer.arrival_iata,
                 body.offer.departure_at.strftime("%Y-%m-%d"),
+                passengers=1,
+                return_date=return_date_str,
             ),
             combo_group_id=combo_group_id,
         )

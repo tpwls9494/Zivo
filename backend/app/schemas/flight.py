@@ -15,6 +15,7 @@ class NormalizedOffer(BaseModel):
     stops: int
     baggage_checked_kg: int
     total_krw: int
+    return_at: datetime | None = None  # 왕복 오퍼의 귀국 출발 시각
 
 
 class ComboOffer(BaseModel):

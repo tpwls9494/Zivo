@@ -96,6 +96,12 @@ def _normalize_slice(offer: dict, slice_idx: int = 0) -> NormalizedOffer:
     checked = next((b for b in baggages if b.get("type") == "checked"), None)
     baggage_kg = 20 if checked and int(checked.get("quantity", 0)) > 0 else 0
 
+    # 왕복 오퍼: slice 1 의 첫 번째 출발 시각 = 귀국 날짜
+    return_at = None
+    if slice_idx == 0 and len(offer["slices"]) > 1:
+        ret_segs = offer["slices"][1]["segments"]
+        return_at = datetime.fromisoformat(ret_segs[0]["departing_at"])
+
     return NormalizedOffer(
         offer_id=offer["id"],
         carrier=first_seg["operating_carrier"]["name"],
@@ -108,6 +114,7 @@ def _normalize_slice(offer: dict, slice_idx: int = 0) -> NormalizedOffer:
         stops=len(segs) - 1,
         baggage_checked_kg=baggage_kg,
         total_krw=_to_krw(offer["total_amount"], offer.get("total_currency", "KRW")),
+        return_at=return_at,
     )
 
 

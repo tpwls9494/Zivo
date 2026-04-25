@@ -46,6 +46,7 @@ export interface NormalizedOffer {
   stops: number;
   baggage_checked_kg: number;
   total_krw: number;
+  return_at: string | null;  // 왕복 오퍼의 귀국 출발 시각
 }
 
 export interface ComboOffer {

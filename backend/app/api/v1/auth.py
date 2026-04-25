@@ -104,6 +104,29 @@ async def auth_me(request: Request) -> AuthMeResponse:
     )
 
 
+@router.post("/merge-device")
+async def merge_device(
+    body: dict,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict[str, bool]:
+    """로그인된 상태에서 익명 device_id 데이터를 현재 유저로 병합 (익스텐션용)."""
+    token = request.cookies.get(_COOKIE_KEY)
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="로그인이 필요합니다")
+    try:
+        payload = decode_access_token(token)
+    except Exception:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="유효하지 않은 토큰입니다")
+
+    device_id = body.get("device_id", "")
+    if device_id:
+        from uuid import UUID
+        await merge_device_to_user(db, device_id, UUID(payload["sub"]))
+        await db.commit()
+    return {"ok": True}
+
+
 @router.post("/logout")
 async def logout(response: Response) -> dict[str, bool]:
     """JWT 쿠키 삭제."""

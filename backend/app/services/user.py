@@ -6,6 +6,8 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.booking import Booking
+from app.models.passenger import Passenger
+from app.models.price_alert import PriceAlert
 from app.models.user import User
 from app.models.user_default import UserDefault
 from app.models.user_profile import UserProfile
@@ -55,8 +57,10 @@ async def merge_device_to_user(
 
     src_id = device_user.id
 
-    # 예약은 제약 없으므로 전부 이전
+    # 예약·알림·탑승자 — 제약 없으므로 전부 이전
     await db.execute(update(Booking).where(Booking.user_id == src_id).values(user_id=target_user_id))
+    await db.execute(update(PriceAlert).where(PriceAlert.user_id == src_id).values(user_id=target_user_id))
+    await db.execute(update(Passenger).where(Passenger.user_id == src_id).values(user_id=target_user_id))
 
     # 프로필·기본값은 UNIQUE 제약 — 카카오 유저에 없을 때만 이전
     target_has_profile = (

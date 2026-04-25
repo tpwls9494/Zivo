@@ -20,6 +20,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   const deviceId = await getOrCreateDeviceId();
   const res = await fetch(`${API_BASE}${path}`, {
     ...init,
+    credentials: "include", // JWT 쿠키 자동 포함
     headers: {
       "Content-Type": "application/json",
       "X-Device-Id": deviceId,
@@ -29,6 +30,7 @@ async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     throw new Error(`API ${res.status}: ${await res.text()}`);
   }
+  if (res.status === 204) return undefined as T;
   return (await res.json()) as T;
 }
 
@@ -39,5 +41,12 @@ export const api = {
     request<ProfileResponse>("/api/profile", {
       method: "PUT",
       body: JSON.stringify(body),
+    }),
+  getMe: () =>
+    request<{ user_id: string; nickname: string | null; email: string | null; is_kakao_user: boolean }>("/api/auth/me"),
+  mergeDevice: (deviceId: string) =>
+    request<{ ok: boolean }>("/api/auth/merge-device", {
+      method: "POST",
+      body: JSON.stringify({ device_id: deviceId }),
     }),
 };

@@ -1,7 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { api } from "@/lib/api";
 import { Button, CardForm, Input, Select, ZivoLogo, ZivoWordmark } from "@/components/ui";
 
 const AIRPORTS = [
@@ -72,6 +74,17 @@ export default function Home() {
   });
   const [pax, setPax] = useState(1);
   const [cabin, setCabin] = useState("economy");
+
+  // 저장된 탑승자 수로 기본 인원 자동 설정
+  const { data: passengers } = useQuery({
+    queryKey: ["passengers"],
+    queryFn: api.listPassengers,
+  });
+  useEffect(() => {
+    if (passengers && passengers.length > 0) {
+      setPax(Math.min(passengers.length, 9));
+    }
+  }, [passengers]);
 
   function handleDepartChange(e: React.ChangeEvent<HTMLInputElement>) {
     const val = e.target.value;

@@ -64,25 +64,28 @@ def _skyscanner_config_url(offer: "NormalizedOffer", passengers: int) -> str | N
         f"-{_sky_fmt(offer.arrival_at)}"
     )
 
+    org = offer.departure_iata.lower()
+    dst = offer.arrival_iata.lower()
+
     if offer.return_at and offer.return_arrival_at:
-        ret_date = offer.return_at.strftime("%y%m%d")   # 260626
+        ret_date = offer.return_at.strftime("%y%m%d")
         leg_ret = (
             f"{dest_id}-{_sky_fmt(offer.return_at)}"
             f"--{carrier_id}-0-{origin_id}"
             f"-{_sky_fmt(offer.return_arrival_at)}"
         )
-        itinerary = f"{leg_out}%7C{leg_ret}"  # %7C = URL-encoded |
+        itinerary = f"{leg_out}%7C{leg_ret}"
         return (
             f"https://www.skyscanner.co.kr/transport/flights"
-            f"/{offer.departure_iata.lower()}/{offer.arrival_iata.lower()}"
-            f"/{dep_date}/{ret_date}/config/{itinerary}"
-            f"?adults={passengers}&cabinclass=economy&airlines=-{carrier_id}"
+            f"/{org}/{dst}/{dep_date}/{ret_date}/config/{itinerary}"
+            f"?adultsv2={passengers}&cabinclass=economy&rtn=1"
+            f"&outboundaltsenabled=false&inboundaltsenabled=false"
+            f"&airlines=-{carrier_id}&preferdirects=true"
         )
     else:
         return (
             f"https://www.skyscanner.co.kr/transport/flights"
-            f"/{offer.departure_iata.lower()}/{offer.arrival_iata.lower()}"
-            f"/{dep_date}/config/{leg_out}"
+            f"/{org}/{dst}/{dep_date}/config/{leg_out}"
             f"?adults={passengers}&cabinclass=economy&airlines=-{carrier_id}"
         )
 

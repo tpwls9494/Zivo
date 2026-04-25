@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { PassengerItem, PassengerPayload } from "@zivo/types";
+import type { PassengerItem, PassengerPayload, ProfileResponse } from "@zivo/types";
 import { api } from "@/lib/api";
 import { Button, Banner, CardForm, Input, Select, Spinner } from "@/components/ui";
 
@@ -104,6 +104,32 @@ export default function ProfilePage() {
     queryFn: api.listPassengers,
   });
 
+  // 익스텐션에서 저장한 구형 프로필 확인 (passengers 비어있을 때만)
+  const { data: oldProfileData } = useQuery({
+    queryKey: ["profile"],
+    queryFn: api.getProfile,
+    enabled: passengers !== undefined && passengers.length === 0,
+  });
+  const oldProfile =
+    oldProfileData && "passport_given_name" in oldProfileData
+      ? (oldProfileData as ProfileResponse)
+      : null;
+
+  const importMut = useMutation({
+    mutationFn: () =>
+      api.createPassenger({
+        nickname: "나",
+        passport_given_name: oldProfile?.passport_given_name ?? "",
+        passport_family_name: oldProfile?.passport_family_name ?? "",
+        birth_date: oldProfile?.birth_date ?? "",
+        gender: (oldProfile?.gender ?? "M") as "M" | "F",
+        nationality: oldProfile?.nationality ?? "KOR",
+        phone: oldProfile?.phone ?? "",
+        is_primary: true,
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["passengers"] }),
+  });
+
   const createMut = useMutation({
     mutationFn: api.createPassenger,
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["passengers"] }); setMode("list"); setMutError(""); },
@@ -173,9 +199,28 @@ export default function ProfilePage() {
           <>
             {isLoading && <div className="flex justify-center py-8"><Spinner size="sm" /></div>}
             {!isLoading && !passengers?.length && (
-              <div className="text-center py-12 text-fg-5">
-                <p className="mb-3">저장된 탑승자가 없습니다.</p>
-                <Button variant="primary" size="md" onClick={() => setMode("add")}>첫 탑승자 추가</Button>
+              <div className="flex flex-col gap-3">
+                {/* 익스텐션에서 저장한 프로필이 있으면 가져오기 배너 표시 */}
+                {oldProfile && (
+                  <Banner variant="info">
+                    <p className="font-medium mb-1">크롬 익스텐션에 저장된 정보가 있습니다</p>
+                    <p className="text-sm mb-2">
+                      {oldProfile.passport_family_name} {oldProfile.passport_given_name} · {oldProfile.phone}
+                    </p>
+                    <Button
+                      variant="primary"
+                      size="sm"
+                      disabled={importMut.isPending}
+                      onClick={() => importMut.mutate()}
+                    >
+                      {importMut.isPending ? "가져오는 중..." : "탑승자로 가져오기"}
+                    </Button>
+                  </Banner>
+                )}
+                <div className="text-center py-8 text-fg-5">
+                  <p className="mb-3">저장된 탑승자가 없습니다.</p>
+                  <Button variant="primary" size="md" onClick={() => setMode("add")}>첫 탑승자 추가</Button>
+                </div>
               </div>
             )}
             {passengers?.map((p) => (

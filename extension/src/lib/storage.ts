@@ -51,12 +51,20 @@ async function _readWebappDeviceId(): Promise<string | null> {
 }
 
 export async function getOrCreateDeviceId(): Promise<string> {
+  // 웹앱 쿠키를 항상 먼저 확인 — 웹앱과 동일한 user로 연결하기 위해 기존 ID보다 우선
+  const webappId = await _readWebappDeviceId();
+  if (webappId) {
+    const current = (await loadDefaults()) ?? {};
+    if (current.deviceId !== webappId) {
+      await saveDefaults({ deviceId: webappId });
+    }
+    return webappId;
+  }
+
+  // 웹앱 미방문 → 기존 ID 유지 또는 새로 생성
   const current = (await loadDefaults()) ?? {};
   if (current.deviceId) return current.deviceId;
-
-  // 웹앱 쿠키와 동기화 시도
-  const webappId = await _readWebappDeviceId();
-  const id = webappId ?? crypto.randomUUID();
+  const id = crypto.randomUUID();
   await saveDefaults({ deviceId: id });
   return id;
 }

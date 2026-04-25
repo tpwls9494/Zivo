@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import type { BookingItem } from "@zivo/types";
 import { api } from "@/lib/api";
@@ -16,7 +16,15 @@ function formatDate(iso: string) {
   });
 }
 
-function BookingCard({ booking }: { booking: BookingItem }) {
+function BookingCard({
+  booking,
+  onDelete,
+  deleting,
+}: {
+  booking: BookingItem;
+  onDelete: () => void;
+  deleting: boolean;
+}) {
   const dirVariant =
     booking.direction === "roundtrip" ? "blue" :
     booking.direction === "outbound" ? "indigo" : "purple";
@@ -34,9 +42,18 @@ function BookingCard({ booking }: { booking: BookingItem }) {
             <span className="text-xs text-fg-6">편도 조합</span>
           )}
         </div>
-        <Badge variant={booking.status === "confirmed" ? "green" : "gray"}>
-          {booking.status}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant={booking.status === "confirmed" ? "green" : "gray"}>
+            {booking.status}
+          </Badge>
+          <button
+            onClick={onDelete}
+            disabled={deleting}
+            className="text-xs text-fg-6 hover:text-red-500 disabled:opacity-40 transition-colors"
+          >
+            삭제
+          </button>
+        </div>
       </div>
 
       <div className="flex items-center gap-2 my-2">
@@ -64,9 +81,17 @@ function BookingCard({ booking }: { booking: BookingItem }) {
 
 export default function BookingsPage() {
   const router = useRouter();
+  const qc = useQueryClient();
+
   const { data, isLoading, isError } = useQuery({
     queryKey: ["bookings"],
     queryFn: api.listBookings,
+  });
+
+  const deleteMut = useMutation({
+    mutationFn: (id: string) =>
+      api.request(`/api/bookings/${id}`, { method: "DELETE" }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["bookings"] }),
   });
 
   return (
@@ -103,7 +128,16 @@ export default function BookingsPage() {
         {data && data.items.length > 0 && (
           <div className="flex flex-col gap-3">
             {data.items.map((booking) => (
-              <BookingCard key={String(booking.id)} booking={booking} />
+              <BookingCard
+                key={String(booking.id)}
+                booking={booking}
+                onDelete={() => {
+                  if (confirm("이 예약 이력을 삭제할까요?")) {
+                    deleteMut.mutate(String(booking.id));
+                  }
+                }}
+                deleting={deleteMut.isPending}
+              />
             ))}
           </div>
         )}

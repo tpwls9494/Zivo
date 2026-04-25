@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+import uuid
+
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy import desc, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -41,3 +43,16 @@ async def list_bookings(
             for b in rows
         ]
     )
+
+
+@router.delete("/{booking_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_booking(
+    booking_id: uuid.UUID,
+    user: User = Depends(get_current_user_or_device),
+    db: AsyncSession = Depends(get_db),
+) -> None:
+    booking = await db.get(Booking, booking_id)
+    if not booking or booking.user_id != user.id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="예약 이력을 찾을 수 없습니다")
+    await db.delete(booking)
+    await db.commit()

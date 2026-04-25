@@ -70,6 +70,7 @@ export interface BookRequest {
   direction?: string;
   combo_inbound?: NormalizedOffer;
   combo_group_id?: string;
+  adults?: number;
 }
 
 export interface BookingDetail {

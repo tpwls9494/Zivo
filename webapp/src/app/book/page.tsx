@@ -41,6 +41,7 @@ function BookForm() {
   const [newPrice, setNewPrice] = useState<number | null>(null);
   const [offer, setOffer] = useState<NormalizedOffer | null>(null);
   const [comboInbound, setComboInbound] = useState<NormalizedOffer | null>(null);
+  const [adults, setAdults] = useState(1);
 
   // 최초 1회만 자동 채우기 — 이후 사용자가 수정한 값을 덮어쓰지 않음
   const hasFilled = useRef(false);
@@ -93,9 +94,11 @@ function BookForm() {
       const parsed = JSON.parse(stored) as {
         offer: NormalizedOffer;
         comboInbound?: NormalizedOffer;
+        adults?: number;
       };
       setOffer(parsed.offer);
       if (parsed.comboInbound) setComboInbound(parsed.comboInbound);
+      if (parsed.adults) setAdults(parsed.adults);
     }
   }, []);
 
@@ -133,6 +136,7 @@ function BookForm() {
       direction: isCombo ? "outbound" : "roundtrip",
       combo_inbound: comboInbound ?? undefined,
       combo_group_id: undefined,
+      adults,
     });
   }
 

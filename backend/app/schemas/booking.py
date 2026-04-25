@@ -11,6 +11,7 @@ class BookRequest(BaseModel):
     direction: str = "roundtrip"  # "roundtrip" | "outbound" | "inbound"
     combo_inbound: NormalizedOffer | None = None
     combo_group_id: uuid.UUID | None = None
+    adults: int = 1
 
 
 class BookingDetail(BaseModel):

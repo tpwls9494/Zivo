@@ -297,7 +297,7 @@ async def book_flight(
         BookingDetail(
             booking_id=outbound_id,
             direction=direction,
-            deep_link_url=_deep_link(body.offer),
+            deep_link_url=_deep_link(body.offer, passengers=body.adults),
             combo_group_id=combo_group_id,
         )
     ]
@@ -323,7 +323,7 @@ async def book_flight(
             BookingDetail(
                 booking_id=inbound_id,
                 direction="inbound",
-                deep_link_url=_deep_link(body.combo_inbound),
+                deep_link_url=_deep_link(body.combo_inbound, passengers=body.adults),
                 combo_group_id=combo_group_id,
             )
         )
